@@ -526,26 +526,28 @@ body {
     <div class="sidebar-logo">📋</div>
     <span class="sidebar-title">xQuant 部署助手</span>
   </div>
+  <!-- JS 状态指示器 -->
+  <div id="jsStatus" style="padding:2px 16px;font-size:10px;color:var(--text-muted);user-select:none;">JS: 加载中...</div>
   <button class="sidebar-new" onclick="newChat()">
     <span>＋</span> 新对话
   </button>
-  <nav class="sidebar-nav">
+  <nav class="sidebar-nav" id="modNav">
     <div class="sidebar-section">历史对话</div>
     <div id="convList"></div>
     <div class="sidebar-section">模块列表</div>
-    <div class="sidebar-item" onclick="quickAsk('报表 report 怎么部署？')">📊 报表 report</div>
-    <div class="sidebar-item" onclick="quickAsk('调度 scheduler 怎么部署？')">⏰ 调度 scheduler</div>
-    <div class="sidebar-item" onclick="quickAsk('工作流 workflow 怎么部署？')">🔀 工作流 workflow</div>
-    <div class="sidebar-item" onclick="quickAsk('离线 xbatch 怎么部署？')">📦 离线 xbatch</div>
-    <div class="sidebar-item" onclick="quickAsk('日历 xCalendar 怎么部署？')">📅 日历 xCalendar</div>
-    <div class="sidebar-item" onclick="quickAsk('实时计算 xstream 怎么部署？')">⚡ 实时 xstream</div>
-    <div class="sidebar-item" onclick="quickAsk('数据服务 xDataApi 怎么部署？')">🔌 数据服务</div>
-    <div class="sidebar-item" onclick="quickAsk('数据源 datasource 怎么部署？')">🗄️ 数据源</div>
-    <div class="sidebar-item" onclick="quickAsk('文档识别 xnlp 怎么部署？')">📄 文档识别</div>
-    <div class="sidebar-item" onclick="quickAsk('血缘 xdatamap 怎么部署？')">🔗 血缘</div>
-    <div class="sidebar-item" onclick="quickAsk('用户中心 usercenter 怎么部署？')">👤 用户中心</div>
-    <div class="sidebar-item" onclick="quickAsk('智能分析 AnalysisAI 怎么部署？')">🧠 智能分析</div>
-    <div class="sidebar-item" onclick="quickAsk('智能体 xllm 怎么部署？')">🤖 智能体</div>
+    <div class="sidebar-item mod-item" data-q="报表 report 怎么部署？">📊 报表 report</div>
+    <div class="sidebar-item mod-item" data-q="调度 scheduler 怎么部署？">⏰ 调度 scheduler</div>
+    <div class="sidebar-item mod-item" data-q="工作流 workflow 怎么部署？">🔀 工作流 workflow</div>
+    <div class="sidebar-item mod-item" data-q="离线 xbatch 怎么部署？">📦 离线 xbatch</div>
+    <div class="sidebar-item mod-item" data-q="日历 xCalendar 怎么部署？">📅 日历 xCalendar</div>
+    <div class="sidebar-item mod-item" data-q="实时计算 xstream 怎么部署？">⚡ 实时 xstream</div>
+    <div class="sidebar-item mod-item" data-q="数据服务 xDataApi 怎么部署？">🔌 数据服务</div>
+    <div class="sidebar-item mod-item" data-q="数据源 datasource 怎么部署？">🗄️ 数据源</div>
+    <div class="sidebar-item mod-item" data-q="文档识别 xnlp 怎么部署？">📄 文档识别</div>
+    <div class="sidebar-item mod-item" data-q="血缘 xdatamap 怎么部署？">🔗 血缘</div>
+    <div class="sidebar-item mod-item" data-q="用户中心 usercenter 怎么部署？">👤 用户中心</div>
+    <div class="sidebar-item mod-item" data-q="智能分析 AnalysisAI 怎么部署？">🧠 智能分析</div>
+    <div class="sidebar-item mod-item" data-q="智能体 xllm 怎么部署？">🤖 智能体</div>
   </nav>
   <div class="sidebar-footer">
     <button onclick="openSettings()" title="设置 API">⚙ 设置</button>
@@ -707,7 +709,7 @@ const MODULE_DATA = {
 };
 
 // ===== SYSTEM PROMPT（精简版：只含规则+模板+6阶段流程，不含模块数据）=====
-const SYSTEM_PROMPT = '你是xQuant部署助手。
+const SYSTEM_PROMPT = `你是xQuant部署助手。
 
 【铁律】
 1. 只从下面"当前模块数据"中提取内容回答，一字不多一字不少
@@ -733,7 +735,7 @@ const SYSTEM_PROMPT = '你是xQuant部署助手。
 阶段5-前端部署: 独立部署:配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署:配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。
 阶段6-验证: Web登录成功、菜单正常、核心功能可用、日志无错误、数据库正常、依赖连通。
 
-联系人: SVN路径→张月芬 | 权限→何美笑 | 疑难→范能科 | JIRA密码→质量部';
+联系人: SVN路径→张月芬 | 权限→何美笑 | 疑难→范能科 | JIRA密码→质量部`;
 
 // 自动检测用户问的是哪个模块
 function detectModule(text) {
@@ -1004,8 +1006,7 @@ async function sendMessage() {
 
   addMsg('user', displayText, allImages);
   conversationHistory.push({role:'user', content:userContent});
-  saveHistory();
-  renderConvList();
+  try { saveHistory(); renderConvList(); } catch(e) { console.error('pre-send save error:', e); }
   addTyping();
 
   // 检测模块并注入精确数据到 SYSTEM_PROMPT
@@ -1073,8 +1074,9 @@ async function sendMessage() {
     addMsg('assistant', '<div class="error-box">❌ ' + (error.message||'网络错误') + '</div>');
     conversationHistory.push({role:'assistant', content:error.message||'网络错误'});
   } finally {
-    saveHistory();
-    renderConvList();
+    // 用 try-catch 保护，防止 saveHistory/renderConvList 崩溃导致 isStreaming 卡死
+    try { saveHistory(); } catch(e) { console.error('saveHistory error:', e); }
+    try { renderConvList(); } catch(e) { console.error('renderConvList error:', e); }
     isStreaming = false;
     document.getElementById('sendBtn').disabled = false;
     document.getElementById('userInput').focus();
@@ -1082,6 +1084,8 @@ async function sendMessage() {
 }
 
 function quickAsk(q) {
+  // 重置卡死状态（以防 isStreaming 被之前的错误卡住）
+  if (isStreaming) { isStreaming = false; document.getElementById('sendBtn').disabled = false; }
   document.getElementById('userInput').value = q;
   sendMessage();
   // Close mobile sidebar
@@ -1104,43 +1108,50 @@ function saveConversations() {
 function loadConversations() {
   try {
     const raw = localStorage.getItem('xq_conversations');
-    if (raw) conversations = JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) conversations = parsed;
+      else conversations = [];
+    }
   } catch(e) { conversations = []; }
   try { activeConvId = localStorage.getItem('xq_active_conv') || null; } catch(e) {}
 }
 
 function saveCurrentConv() {
-  if (!conversationHistory.length) return;
-  // 提取标题（第一条用户消息的前30字）
-  const firstUser = conversationHistory.find(m => m.role==='user');
-  let title = '新对话';
-  if (firstUser) {
-    const txt = typeof firstUser.content==='string' ? firstUser.content : '';
-    title = txt.replace(/[\n\r]/g,' ').slice(0,30) + (txt.length>30?'…':'');
-  }
-  // 获取时间
-  const now = new Date();
-  const time = now.toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+' '
-    + now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
-
-  if (activeConvId) {
-    const idx = conversations.findIndex(c => c.id===activeConvId);
-    const slim = conversationHistory.map(m => {
-      if (Array.isArray(m.content)) {
-        const texts = m.content.filter(c=>c.type==='text').map(c=>c.text);
-        return {role:m.role, content:texts.join('\n')||'（图片）', hadImages:true};
-      }
-      return {role:m.role, content:m.content};
-    });
-    if (idx>=0) {
-      conversations[idx].title = title;
-      conversations[idx].messages = slim;
-      conversations[idx].time = time;
-    } else {
-      conversations.unshift({id:activeConvId, title, messages:slim, time});
+  try {
+    if (!conversationHistory.length) return;
+    if (!Array.isArray(conversations)) conversations = [];
+    // 提取标题（第一条用户消息的前30字）
+    const firstUser = conversationHistory.find(m => m.role==='user');
+    let title = '新对话';
+    if (firstUser) {
+      const txt = typeof firstUser.content==='string' ? firstUser.content : '';
+      title = txt.replace(/[\n\r]/g,' ').slice(0,30) + (txt.length>30?'…':'');
     }
-  }
-  saveConversations();
+    // 获取时间
+    const now = new Date();
+    const time = now.toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+' '
+      + now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+
+    if (activeConvId) {
+      const idx = conversations.findIndex(c => c.id===activeConvId);
+      const slim = conversationHistory.map(m => {
+        if (Array.isArray(m.content)) {
+          const texts = m.content.filter(c=>c.type==='text').map(c=>c.text);
+          return {role:m.role, content:texts.join('\n')||'（图片）', hadImages:true};
+        }
+        return {role:m.role, content:m.content};
+      });
+      if (idx>=0) {
+        conversations[idx].title = title;
+        conversations[idx].messages = slim;
+        conversations[idx].time = time;
+      } else {
+        conversations.unshift({id:activeConvId, title, messages:slim, time});
+      }
+    }
+    saveConversations();
+  } catch(e) { console.error('saveCurrentConv error:', e); }
 }
 
 function switchConv(id) {
@@ -1290,11 +1301,39 @@ function toggleSidebar() {
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', () => {
-  if (!API_KEY) {
-    document.getElementById('setupOverlay').classList.add('show');
+  var statusEl = document.getElementById('jsStatus');
+  try {
+    if (statusEl) statusEl.textContent = 'JS: 绑定事件中...';
+    
+    // 模块列表点击 - 事件委托（用 getElementById + 手动 closest 确保兼容）
+    var navEl = document.getElementById('modNav');
+    if (navEl) {
+      navEl.addEventListener('click', function(e) {
+        var target = e.target;
+        while (target && target !== navEl) {
+          if (target.classList && target.classList.contains('mod-item')) break;
+          target = target.parentNode;
+        }
+        if (!target || target === navEl || !target.classList) return;
+        var q = target.getAttribute('data-q');
+        if (!q) return;
+        target.style.background = 'rgba(77,107,254,0.15)';
+        setTimeout(function() { target.style.background = ''; }, 200);
+        quickAsk(q);
+      });
+      if (statusEl) statusEl.textContent = 'JS: ✅ 就绪';
+    } else {
+      if (statusEl) statusEl.textContent = 'JS: ❌ modNav 未找到';
+    }
+    
+    if (!API_KEY) {
+      document.getElementById('setupOverlay').classList.add('show');
+    }
+    loadHistory();
+    autoResize(document.getElementById('userInput'));
+  } catch(e) {
+    if (statusEl) statusEl.textContent = 'JS: ❌ 错误: ' + e.message;
   }
-  loadHistory();
-  autoResize(document.getElementById('userInput'));
 });
 </script>
 </body>
