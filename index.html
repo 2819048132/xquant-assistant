@@ -668,12 +668,7 @@ const MODULE_DATA = {
 硬件: 500G磁盘 / 8G内存 / 4核CPU
 需要Redis: 是
 容器: Tomcat / 宝蓝德 / 东方通
-特殊步骤: 必须配置Redis连接
-
-常见故障排查:
-1. 心跳超时导致数据重复: 日志出现"master开始补偿work[xxx]宕机的任务"→调大参数xquant.scheduler.timeOut值为120000(2分钟)
-2. 服务启动失败报Access denied: telnet确认网络→检查数据库远程链接权限→确认密码/加密配置正确
-3. Worker向Master注册失败(向[http://xxx:xx]注册请求失败，原因null): 业务系统自定义RestTemplate冲突→方案一Nacos+RESTTEMPLATE→方案二Nacos+FEIGN`
+特殊步骤: 必须配置Redis连接`
   },
   workflow: {
     keywords: ['workflow','工作流'],
@@ -709,11 +704,7 @@ Java版本: OpenJDK 8 和 OpenJDK 17（双版本，两个都要装！）
 数据库: MySQL 5.7/8.0, Oracle 11g
 硬件: 500G磁盘 / 8G内存 / 4核CPU
 需要Redis: 否
-容器: Tomcat
-
-常见故障排查:
-1. MySQL CDC任务自动停止: 数据库连不上导致Flink任务失败→修改flink-conf.yaml添加restart-strategy:fixed-delay attempts:5 delay:30s→重启Flink
-2. SQL Server CDC任务自动停止: 数据库连不上导致→同上添加自动重试配置→重启Flink`
+容器: Tomcat`
   },
   xDataApi: {
     keywords: ['xdataapi','数据服务','xDataApi','dataapi'],
@@ -729,13 +720,7 @@ Java版本: OpenJDK 8 和 OpenJDK 17（双版本，两个都要装！）
 数据库: MySQL 5.7, Oracle 11g, DM, GAUSS
 硬件: 500G磁盘 / 8G内存 / 4核CPU
 需要Redis: 否
-容器: Tomcat / 宝蓝德
-
-常见故障排查:
-1. GBASE8A同步数据包含特殊字符: 字段中含\\u0001\\u0002等分隔符导致解析失败→使用SQL管道模式将特殊字符字段转为普通字符
-2. 连接HDFS报SIMPLE authentication错误: HDFS开启Kerberos认证但未使用→使用Kerberos认证方式连接
-3. 连接HDFS报Operation category READ not supported in state standby: DefaultFS只配了一个Standby节点→将所有HDFS节点地址都写上实现自动failover
-4. Oracle写入慢TPS<10000: ①SGA/PGA设置过小(16G内存→SGA 4G/PGA 2G)→调大 ②索引太多→先导数据再建索引 ③大字段CLOB/BLOB多→慢是正常的 ④DataX频繁GC→检查full GC ⑤拉取AWR报告定位瓶颈`
+容器: Tomcat / 宝蓝德`
   },
   xnlp: {
     keywords: ['xnlp','文档识别','文档解析','nlp','paddle'],
