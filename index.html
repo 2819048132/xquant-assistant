@@ -721,9 +721,7 @@ const SYSTEM_PROMPT = `你是xQuant部署助手。你的任务极其简单：把
 阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录与environmentpackage同级。
 阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证:ps -elf|grep java、netstat -tlnp|grep 端口、tail -200f logs/xxx.log。停止:sh stop.sh。
 阶段5-前端部署: 独立部署:配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署:配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。
-阶段6-验证: Web登录成功、菜单正常、核心功能可用、日志无错误、数据库正常、依赖连通。
-
-联系人: SVN路径→张月芬 | 权限→何美笑 | 疑难→范能科 | JIRA密码→质量部`;
+阶段6-验证: Web登录成功、菜单正常、核心功能可用、日志无错误、数据库正常、依赖连通。`;
 
 // 自动检测用户问的是哪个模块
 function detectModule(text) {
