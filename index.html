@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>xQuant 部署助手</title>
+<style>
+:root {
+  --sidebar-w: 260px;
+  --accent: #4d6bfe;
+  --accent-hover: #3b5ae0;
+  --bg-main: #fff;
+  --bg-sidebar: #f3f4f6;
+  --bg-chat: #fff;
+  --bg-user: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --border: #e5e7eb;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --radius-lg: 24px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+  background: var(--bg-main);
+  height: 100vh;
+  display: flex;
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: var(--sidebar-w);
+  background: var(--bg-sidebar);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+  z-index: 10;
+}
+.sidebar-header {
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-logo {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 16px; font-weight: 700;
+  flex-shrink: 0;
+}
+.sidebar-title {
+  font-size: 15px; font-weight: 600;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sidebar-new {
+  margin: 12px 12px 8px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  background: #fff;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex; align-items: center; gap: 8px;
+  transition: all 0.15s;
+}
+.sidebar-new:hover { border-color: var(--accent); color: var(--accent); background: #eef0ff; }
+.sidebar-nav { flex:1; overflow-y:auto; padding:4px 8px; }
+.sidebar-section {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+}
+.sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s;
+  position: relative;
+}
+.sidebar-item:hover { background: #e5e7eb; color: var(--text-primary); }
+.sidebar-item.active { background: #e8edff; color: var(--accent); font-weight: 500; }
+.sidebar-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink:0; opacity:0.4; }
+.sidebar-item.active .dot { opacity:1; }
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 6px;
+}
+.sidebar-footer button {
+  flex:1;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.12s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.sidebar-footer button:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Hamburger */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 12px; left: 12px;
+  z-index: 20;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 9;
+}
+
+/* ===== MAIN ===== */
+.main {
+  flex:1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+.chat-area {
+  flex:1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  scroll-behavior: smooth;
+}
+.chat-inner {
+  max-width: 768px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ===== WELCOME ===== */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px 40px;
+  text-align: center;
+}
+.welcome-icon {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(77,107,254,0.25);
+}
+.welcome h1 { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+.welcome p { font-size: 14px; color: var(--text-secondary); max-width: 420px; line-height: 1.6; margin-bottom: 28px; }
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-width: 520px;
+  width: 100%;
+}
+.quick-card {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  text-align: left;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+  display: flex; align-items: center; gap: 8px;
+  line-height: 1.4;
+}
+.quick-card:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #f8f9ff;
+  box-shadow: var(--shadow-sm);
+}
+.quick-card .qc-icon { font-size: 16px; flex-shrink: 0; }
+@media (max-width: 560px) { .quick-grid { grid-template-columns: 1fr; } }
+
+/* ===== MESSAGES ===== */
+.message { display: flex; gap: 12px; max-width: 100%; animation: fadeUp 0.3s ease; padding: 4px 0; }
+.message:not(:first-child) { margin-top: 20px; }
+.message.user { flex-direction: row-reverse; }
+.msg-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 600;
+}
+.msg-avatar.ai {
+  background: linear-gradient(135deg, var(--accent), #7c3aed);
+  color: white;
+}
+.msg-avatar.user {
+  background: var(--bg-user);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.msg-body { max-width: calc(100% - 50px); }
+.msg-role { font-size: 12px; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
+.message.user .msg-role { text-align: right; }
+.msg-content {
+  font-size: 14px; line-height: 1.75;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+.message.user .msg-content {
+  background: var(--bg-user);
+  padding: 10px 14px;
+  border-radius: 16px 4px 16px 16px;
+}
+.msg-content img.msg-img {
+  max-width: 320px; max-height: 260px;
+  border-radius: var(--radius-sm);
+  margin: 4px 0;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  display: block;
+  transition: transform 0.15s;
+}
+.msg-content img.msg-img:hover { transform: scale(1.02); }
+.message.user .msg-content img.msg-img { margin-left: auto; }
+
+/* Code */
+.msg-content code {
+  background: #f1f5f9;
+  padding: 2px 6px; border-radius: 4px;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+}
+.msg-content pre {
+  background: #1e1e2e; color: #cdd6f4;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  margin: 10px 0;
+  font-size: 13px;
+  line-height: 1.6;
+  position: relative;
+}
+.msg-content pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.copy-btn {
+  position: absolute; top: 8px; right: 8px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: #cdd6f4;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.12s;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.18); }
+.msg-content strong { font-weight: 600; }
+.msg-content ul, .msg-content ol { padding-left: 20px; margin: 6px 0; }
+
+/* Typing */
+.typing-dots { display: inline-flex; gap: 3px; }
+.typing-dots span {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: dotPulse 1.4s infinite;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%,60%,100% { transform:translateY(0); opacity:0.4; }
+  30% { transform:translateY(-5px); opacity:1; }
+}
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(8px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+/* Error */
+.error-box {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  border: 1px solid #fecaca;
+}
+
+/* ===== INPUT AREA ===== */
+.input-outer {
+  padding: 0 16px 20px;
+  flex-shrink: 0;
+}
+.input-inner {
+  max-width: 768px;
+  margin: 0 auto;
+  position: relative;
+}
+.input-box {
+  display: flex; align-items: flex-end;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 8px 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  gap: 6px;
+}
+.input-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(77,107,254,0.1);
+}
+.img-preview-bar {
+  display: none;
+  padding: 0 0 8px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.img-preview-bar.show { display: flex; }
+.img-preview-item {
+  position: relative;
+  width: 56px; height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.img-preview-item img { width:100%; height:100%; object-fit:cover; }
+.img-preview-item .rm {
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+}
+.input-box textarea {
+  flex:1;
+  border: none;
+  outline: none;
+  resize: none;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 4px 0;
+  max-height: 140px;
+  color: var(--text-primary);
+}
+.input-box textarea::placeholder { color: var(--text-muted); }
+.input-icon {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.input-icon:hover { background: #f3f4f6; color: var(--text-primary); }
+.send-btn {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.send-btn:hover { background: var(--accent-hover); transform: scale(1.06); }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.input-disclaimer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-top: 8px;
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+/* ===== MODAL ===== */
+.image-modal {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 200;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.image-modal.show { display: flex; }
+.image-modal img {
+  max-width: 94%; max-height: 94%;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+}
+
+/* Settings Overlay */
+.setup-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 100;
+  align-items: center; justify-content: center;
+}
+.setup-overlay.show { display: flex; }
+.setup-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 24px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+}
+.setup-card h2 { font-size: 18px; margin-bottom: 4px; }
+.setup-card .sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 16px; line-height: 1.5; }
+.setup-card label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 4px; margin-top: 14px; }
+.setup-card select, .setup-card input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+.setup-card select:focus, .setup-card input:focus { border-color: var(--accent); }
+.setup-card .btn-primary {
+  width: 100%;
+  margin-top: 18px;
+  padding: 11px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.setup-card .btn-primary:hover { background: var(--accent-hover); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed; left:0; top:0; bottom:0;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-md);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-overlay.show { display: block; }
+  .hamburger { display: flex; }
+  .chat-area { padding: 12px 10px; }
+  .input-outer { padding: 0 10px 14px; }
+  .welcome { padding: 40px 12px 30px; }
+  .welcome h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Hamburger (mobile) -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">📋</div>
+    <span class="sidebar-title">xQuant 部署助手</span>
+  </div>
+  <button class="sidebar-new" onclick="newChat()">
+    <span>＋</span> 新对话
+  </button>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section">快捷导航</div>
+    <div class="sidebar-item active" onclick="scrollToWelcome()" id="nav-welcome">
+      <span class="dot"></span> 开始提问
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('xCalendar 前端打不开怎么排查？')">
+      <span class="dot"></span> 日历前端问题
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('xbatch 需要什么硬件配置和特殊包？')">
+      <span class="dot"></span> 离线硬件要求
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序是什么？')">
+      <span class="dot"></span> 智能分析依赖
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('JDBC URL 配置常见错误？')">
+      <span class="dot"></span> 数据库连接错误
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('调度 scheduler 启动报错怎么排查？')">
+      <span class="dot"></span> 调度排查指南
+    </div>
+    <div class="sidebar-item" onclick="quickAsk('xllm 部署有哪些特殊步骤？')">
+      <span class="dot"></span> xllm 部署步骤
+    </div>
+    <div class="sidebar-section">模块列表</div>
+    <div class="sidebar-item" onclick="quickAsk('报表 report 怎么部署？')">📊 报表 report</div>
+    <div class="sidebar-item" onclick="quickAsk('调度 scheduler 怎么部署？')">⏰ 调度 scheduler</div>
+    <div class="sidebar-item" onclick="quickAsk('工作流 workflow 怎么部署？')">🔀 工作流 workflow</div>
+    <div class="sidebar-item" onclick="quickAsk('离线 xbatch 怎么部署？')">📦 离线 xbatch</div>
+    <div class="sidebar-item" onclick="quickAsk('日历 xCalendar 怎么部署？')">📅 日历 xCalendar</div>
+    <div class="sidebar-item" onclick="quickAsk('实时计算 xstream 怎么部署？')">⚡ 实时 xstream</div>
+    <div class="sidebar-item" onclick="quickAsk('数据服务 xDataApi 怎么部署？')">🔌 数据服务</div>
+    <div class="sidebar-item" onclick="quickAsk('数据源 datasource 怎么部署？')">🗄️ 数据源</div>
+    <div class="sidebar-item" onclick="quickAsk('文档识别 xnlp 怎么部署？')">📄 文档识别</div>
+    <div class="sidebar-item" onclick="quickAsk('血缘 xdatamap 怎么部署？')">🔗 血缘</div>
+    <div class="sidebar-item" onclick="quickAsk('用户中心 usercenter 怎么部署？')">👤 用户中心</div>
+    <div class="sidebar-item" onclick="quickAsk('智能分析 AnalysisAI 怎么部署？')">🧠 智能分析</div>
+    <div class="sidebar-item" onclick="quickAsk('智能体 xllm 怎么部署？')">🤖 智能体</div>
+  </nav>
+  <div class="sidebar-footer">
+    <button onclick="openSettings()" title="设置 API">⚙ 设置</button>
+    <button onclick="clearChat()" title="清空对话">🗑 清空</button>
+  </div>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<main class="main">
+  <div class="chat-area" id="chatArea">
+    <div class="chat-inner" id="chatInner">
+      <!-- Welcome -->
+      <div class="welcome" id="welcomeMsg">
+        <div class="welcome-icon">📋</div>
+        <h1>xQuant 部署助手</h1>
+        <p>我已读完 13 份部署手册，随时为你解答。支持上传报错截图分析、多轮对话——任何部署问题都可以问。</p>
+        <div class="quick-grid">
+          <div class="quick-card" onclick="quickAsk('日历部署前端打不开怎么排查？')">
+            <span class="qc-icon">📅</span> 日历前端打不开？
+          </div>
+          <div class="quick-card" onclick="quickAsk('xbatch 需要什么硬件配置？')">
+            <span class="qc-icon">📦</span> xbatch 硬件配置？
+          </div>
+          <div class="quick-card" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序？')">
+            <span class="qc-icon">🧠</span> AnalysisAI 依赖关系？
+          </div>
+          <div class="quick-card" onclick="quickAsk('JDBC URL 配置要注意什么？')">
+            <span class="qc-icon">🔌</span> 数据库连接常见坑
+          </div>
+          <div class="quick-card" onclick="quickAsk('调度启动报数据库连接错误怎么排查？')">
+            <span class="qc-icon">⏰</span> 调度启动报错排查
+          </div>
+          <div class="quick-card" onclick="quickAsk('xllm 部署顺序和特殊步骤？')">
+            <span class="qc-icon">🤖</span> xllm 部署步骤
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-outer">
+    <div class="input-inner">
+      <div class="img-preview-bar" id="imgPreviewBar"></div>
+      <div class="input-box">
+        <input type="file" id="imageInput" accept="image/*" style="display:none" onchange="handleImageSelect(event)" multiple />
+        <button class="input-icon" onclick="document.getElementById('imageInput').click()" title="上传图片">📎</button>
+        <textarea id="userInput" placeholder="输入部署问题，支持上传截图分析..." rows="1" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="发送">➤</button>
+      </div>
+    </div>
+    <div class="input-disclaimer">xQuant 部署助手 · 基于 13 份部署手册 · 智谱 GLM 驱动</div>
+  </div>
+</main>
+
+<!-- Image Modal -->
+<div class="image-modal" id="imageModal" onclick="closeImageModal()">
+  <img id="imageModalImg" src="" alt="放大查看" />
+</div>
+
+<!-- Settings Overlay -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-card">
+    <h2>⚙ API 设置</h2>
+    <p class="sub">已预置智谱 GLM Key（免费额度），默认支持图片分析，打开即用。</p>
+    <label for="modelSelect">模型</label>
+    <select id="modelSelect" onchange="onModelChange()">
+      <option value="glm-4v-flash" selected>GLM-4V-Flash（图片分析，免费）</option>
+      <option value="deepseek-chat">DeepSeek-V3（推荐，纯文本）</option>
+      <option value="deepseek-v4-flash">DeepSeek-V4 Flash（支持图片）</option>
+      <option value="deepseek-reasoner">DeepSeek-R1（深度推理）</option>
+      <option value="qwen-vl-plus">通义千问-VL-Plus（图片分析）</option>
+      <option value="qwen-vl-max">通义千问-VL-Max（图片分析）</option>
+      <option value="qwen-plus">通义千问-Plus</option>
+      <option value="qwen-max">通义千问-Max</option>
+      <option value="glm-4-flash">智谱 GLM-4-Flash（纯文本，免费）</option>
+      <option value="moonshot-v1-8k">Kimi</option>
+    </select>
+    <label for="apiKeyInput">API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-xxxxxxxxxxxxxxxx" oninput="checkWorkspace()" />
+    <div id="wsGroup" style="display:none">
+      <label for="wsIdInput">Workspace ID（业务空间ID）</label>
+      <input type="text" id="wsIdInput" placeholder="ws-xxxxxxxxxxxx" oninput="updateWsUrl()" />
+    </div>
+    <label for="apiBaseInput">API 地址</label>
+    <input type="text" id="apiBaseInput" value="https://open.bigmodel.cn/api/paas/v4" />
+    <button class="btn-primary" onclick="saveConfig()">保存</button>
+  </div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const DEFAULT_API_KEY = '03d703ac5e2c46d4aa7eb7adef73cc4f.xqBETElvhSFW6pQt';
+let API_KEY = localStorage.getItem('xq_api_key') || DEFAULT_API_KEY;
+let API_BASE = localStorage.getItem('xq_api_base') || 'https://open.bigmodel.cn/api/paas/v4';
+let MODEL = localStorage.getItem('xq_model') || 'glm-4v-flash';
+let WS_ID = localStorage.getItem('xq_ws_id') || '';
+let conversationHistory = [];
+let isStreaming = false;
+let pendingImages = [];
+
+// ===== SYSTEM PROMPT =====
+const SYSTEM_PROMPT = `你是 xQuant 部署助手，所有知识来源于 13 份 xQuant 部署手册。你是杭州衡泰技术股份有限公司技术研发部的智能部署助手。
+
+## ⚠️ 最高规则：与部署手册完全一致
+- 回答必须严格遵循部署手册原文流程，**禁止自行编造步骤或添加手册中没有的内容**
+- 如果你不确定某个细节，必须明确告知用户「请参考部署手册原文或联系对应负责人」，**禁止猜测**
+- 部署手册是唯一权威来源，任何与之不符的回答都是错误的
+
+## 📞 联系支持
+
+| 问题类型 | 联系人 | 部门 |
+|----------|--------|------|
+| SVN 路径 / 版本确认 | **张月芬** | 研发中心-技术研发部配管 |
+| SVN 权限 | **何美笑** | 研发中心 |
+| 疑难杂症（知识库未收录） | **范能科** | 技术研发部 |
+| JIRA / Confluence 密码 | **质量部** | — |
+
+问题处理优先级：1.查本知识库 → 2.查 Confluence 文档 → 3.联系对应负责人 → 4.疑难杂症兜底→范能科
+
+## 📋 端口速查表
+
+| 模块 | 默认端口 | 配置文件 |
+|------|---------|----------|
+| 用户中心 usercenter | 1184 | usercenter/conf/application.yml |
+| 调度 scheduler | 8090 | scheduler/conf/application.yml |
+| 调度 Master | 8085 | — |
+| 离线计算 xbatch | 8999 | xbatch/conf/application.yml |
+| 数据源 datasource | 8093 | datasource/conf/application.yml |
+| 数据服务 xDataApi | 6088 | xDataApi/conf/application.yml |
+| 工作流 workflow | 8080 | workflow/conf/application.yml |
+| 实时计算 xstream | 6995 | xstream/conf/application.yml |
+| Flink Dashboard | 8081 | flink-conf.yaml |
+| 报表/日历/xnlp/血缘/xllm/AnalysisAI | 见各自配置 | 各模块 conf/application.yml |
+
+主应用统一入口：**9999**（Nginx 反向代理）
+
+## 📋 13 个模块详解
+
+### 1. 用户中心 usercenter（基础服务）| 端口 1184 | 配置 usercenter/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g, DM V8, OceanBase, TDSQL | 需要 Redis
+- 无独立前端，仅集成模式（微前端主从架构）| 超管账号：997001
+- 升级部署：按版本号从小到大执行 Vx.x.x.x-ddl.sql 和 Vx.x.x.x-dml.sql
+
+### 2. 调度 scheduler | 端口 8090（Master 8085）| 配置 scheduler/conf/application.yml
+- 数据库：MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS | **需要 Redis**
+- 部署后前置工作：①配置日历数据（tcalendar/tcalendar_dates）②导入账户数据（tsys_acc_secu/tsys_acc_secu_tree）③Worker 注册（Nacos 或 REST 模式）
+- 心跳超时调整：master 开始补偿 work → 调大 timeOut 到 120000
+- 三阶段执行策略：定时执行、CRON 表达式、信号回溯
+
+### 3. 工作流 workflow | 端口 8080 | 配置 workflow/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL | 不需要 Redis
+- 容器：仅 Tomcat
+
+### 4. 离线计算 xbatch+worker-shell | 端口 8999 | 配置 xbatch/conf/application.yml + worker-shell/conf/...
+- 数据库：MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, OceanBase-Oracle
+- 硬件：CPU **8核** / 内存 **16G** | Java：JDK 8 **和** JDK 17（双版本）
+- 特殊包：**datax.zip**（数据交换引擎，必须）| xbatch 和 worker-shell 分别部署，各有独立脚本/配置/启停
+- worker-shell 无独立前端 | 管道类型：通用管道(SQL入库/表对表/拉链表/Fpml/文件导入/大数据迁移)、通用脚本(SQL/Shell/Python)、专用管道、集成方案
+
+### 5. 日历 xCalendar | 端口见配置 | 配置 xCalendar/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g, DM, OceanBase, TDSQL | 不需要 Redis
+- **前端路径：前端/xCalendar/child/xCalendar**（不是 前端/xCalendar）
+- **JDBC URL：jdbc:mysql://IP:3306/calendar 中的 /calendar 要改成实际库名**
+- 前端支持独立部署和集成部署两种方式
+
+### 6. 实时计算 xstream | 端口 6995 | Flink 8081 | 配置 xstream/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g | 容器：Tomcat | 不需要 Redis
+- 依赖 Flink（端口 8081）
+
+### 7. 数据服务 xDataApi（基础服务）| 端口 6088 | 配置 xDataApi/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL | 不需要 Redis
+- Nginx 注意：proxy_read_timeout 需设 600（接口可能响应慢）
+
+### 8. 数据源 datasource（基础服务）| 端口 8093 | 配置 datasource/conf/application.yml
+- 数据库：MySQL 5.7, Oracle 11g, DM, GAUSS | 不需要 Redis
+- 是 workflow/xnlp/report 等的前置依赖 | Nginx 注意：client_max_body_size 2000m（大文件上传）
+
+### 9. 文档识别 xnlp 绿色版 | 端口见配置 | 配置 xnlp/conf/application.yml
+- 数据库：**仅 Oracle 11g** | 不需要 Redis | 绿色版：免安装，自带运行环境
+- 特殊包：paddle.tar.gz（首次部署需要，版本迭代不需要）| 部署后通过 Web UI 导入最新标准模板
+
+### 10. 血缘 xdatamap | 端口见配置 | 配置 xdatamap/conf/application.yml
+- 数据库：MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL | 不需要 Redis
+
+### 11. 报表 report | 端口见配置 | 配置 report/conf/application.yml
+- 数据库：MySQL 5.7, Oracle 11g, DM, GAUSS | 不需要 Redis
+- 特殊：需要无头浏览器（渲染报表导出 PDF），x86 环境需安装 libX11/libXext/libXrender/libGL，验证：ldd chrome-headless-shell | grep "not found"
+
+### 12. 智能分析 AnalysisAI | 端口见配置 | 配置 AnalysisAI/conf/application.yml | ⚠️ 硬依赖
+- 数据库：仅 MySQL 5.7 | 脚本路径：数据库脚本/investai/
+- **硬依赖：datasource + xllm + usercenter（三项必须已部署且运行正常后才部署！）** | 缺失任一依赖会导致启动失败或功能异常
+
+### 13. 智能体 xllm 绿色版 | 端口见配置 | 配置 xllm/conf/application.yml
+- 数据库：仅 MySQL 5.7 | 需要 Redis | 绿色版：免安装
+- 特殊包：miniforge3.zip（Python 环境）+ xllmmodelservice/（大模型服务）
+- **有 2 个前端：xllmweb + xresource，两个都要部署！**
+- 自身部署顺序：plugin → miniforge3 → xllmModelService → 后端 → 前端(xllmweb+xresource)
+- 关联子服务（软依赖）：datasource（读库Agent）、xDataApi（接口注册/工作流插件）、usercenter（鉴权/智能体中心/知识库管理/钉钉鉴权）
+
+## 标准化部署流程（6 阶段，摘自部署手册）
+
+### 阶段 1：获取部署包
+- 从 SVN 获取：部署包（模块名/）+ 环境包（plugin.zip）
+- 特殊环境包：xbatch→datax.zip | xnlp→paddle.tar.gz | xllm→miniforge3.zip + xllmmodelservice/
+- SVN 路径问题 → 张月芬 | 权限问题 → 何美笑 | 版本不确定 → Confluence
+
+### 阶段 2：数据库部署
+- **数据库必须比后端先完成！**
+- **数据库脚本来源**：从 SVN 发布包【数据库脚本】目录获取，**不需要自己编写 SQL**
+- **首次部署**：确定数据库类型，取 init/ 目录脚本，严格按序：①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql
+- **更新/升级部署**：确定数据库类型，取 update/ 目录脚本，找当前版本→目标版本之间的 Vx.x.x.x-ddl.sql 和 Vx.x.x.x-dml.sql，**按版本号升序执行**
+- 工具：MySQL/Oracle→DBeaver（检查分隔符设置：[窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]）| OceanBase→ODC
+- 信创环境：优先 TDSQL-MySQL | 非信创环境：MySQL 5.7
+
+### 阶段 3：环境包部署
+- cd /home/xtop/environmentpackage/ && unzip plugin.zip
+- xbatch 额外：unzip datax.zip | xnlp 首次额外：解压 paddle.tar.gz
+- xllm 额外：解压 miniforge3.zip + 部署 xllmmodelservice/
+- 模块目录必须和 environmentpackage 同级
+
+### 阶段 4：后端部署
+- 上传后端包 → 修改 conf/application.yml（数据库连接/Redis/端口）→ sh start.sh
+- 验证：ps -elf | grep java、netstat -tlnp | grep 端口、tail -200f logs/xxx.log
+- 停止：sh stop.sh
+- 常见失败原因：数据库未初始化 | start.sh 无执行权限 | Java 版本不对 | 配置错误 | 端口冲突
+
+### 阶段 5：前端部署
+- 独立部署：配置菜单路由 → 上传 dist → 配 nginx_{module}_duli.conf → nginx -s reload
+- 集成部署：配置菜单路由 → 上传 dist 到主平台 child/ 目录 → 合并 nginx → nginx -s reload
+- 特殊：xllm 有 2 个前端（xllmweb+xresource）都要部署 | xnlp 部署后需通过 Web UI 导入标准模板
+- usercenter 无独立前端（仅集成模式）| worker-shell 无独立前端
+
+### 阶段 6：验证检查
+- Web 页面登录成功 | 菜单渲染正常 | 核心功能可用 | 日志无错误 | 数据库连接正常 | 依赖服务连通
+
+## 🌐 Nginx 集成部署配置
+
+微前端主从架构，统一端口 9999，各子应用放 child/ 目录。配置要点：
+- 修改 server_name 为实际服务器 IP
+- 修改各 proxy_pass 中的 IP 为后端实际地址
+- datasource 的 client_max_body_size 设置 2000m
+- xDataApi 的 proxy_read_timeout 设置 600
+- 修改后执行：nginx -t && nginx -s reload
+
+## 💻 调度 SDK 快速开始
+
+**Maven 依赖**：com.xtop:xtop-scheduler-worker，版本 ${scheduler.version}
+
+**核心步骤**：①YAML 配置 master 地址和端口 ②@XquantTaskBean 注解实现 XquantTask 接口 ③核心方法：doTask（任务执行）、shardingTask（分片）、pauseTask/stopTask（暂停/停止，可选）
+
+**Worker 注册冲突**（请求失败原因 null）→ 4 种方案：
+1. 推荐 Nacos+RESTTEMPLATE：master/worker 都设 requestType: RESTTEMPLATE，worker 用服务名
+2. Nacos+FEIGN：都设 requestType: FEIGN
+3. 非Nacos+FEIGN(Spring Cloud <2020)：配 ribbon.listOfServers
+4. 非Nacos+FEIGN(Spring Cloud ≥2020)：配 spring.cloud.discovery.client.simple.instances
+
+## 🔧 故障排查
+
+### 数据库连接被拒
+诊断链：①telnet DB_IP 3306 确认网络→②mysql 客户端试连→③确认远程连接权限 GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查 jasypt.encryptor.password→⑤确认防火墙 3306
+
+### 调度心跳超时导致数据重复
+症状：日志「master 开始补偿 work[xxx] 宕机的任务」→ 调大 timeOut 到 120000（2分钟）
+调试：Worker 无日志→GC暂停 | 无网络请求→网络问题 | 请求间隔长→线程阻塞
+
+### Flink CDC 任务自动停止
+修复 flink-conf.yaml：restart-strategy: fixed-delay, attempts: 5, delay: 30s → 重启 Flink：./bin/stop-cluster.sh && ./bin/start-cluster.sh
+
+### HDFS Kerberos 认证失败
+症状：「SIMPLE authentication is not enabled」→ 在数据源连接配置页开启 Kerberos 认证 → 验证：kinit -kt /path/to/keytab principal → klist 确认 ticket
+
+### HDFS Standby NameNode 故障
+症状：「Operation category READ is not supported in state standby」→ DefaultFS 输入全部 HDFS 节点地址（nameservice）实现自动 failover
+
+### Oracle 目标写入慢（TPS<10000）
+五步诊断：①SGA/PGA 调优（16G内存→SGA 4G、PGA 2G，SGA=内存×0.6×0.6，PGA=SGA×0.5）②索引太多→先导数据再建索引 ③大字段(CLOB/BLOB)→预期内慢 ④DataX GC→检查 full GC ⑤AWR 报告定位瓶颈
+
+### GBASE8a 同步特殊字符字段错乱
+使用 SQL 管道模式，在源查询中将特殊字符字段转换为普通字符
+
+### 前端访问 500 错误
+①ps -elf | grep java 确认后端已启动→②检查 Nginx proxy_pass 地址端口→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
+
+### 内存溢出 OOM
+JVM 参数 -Xmx8192m -Xms4096m；xbatch 至少分配 16G 物理内存；检查 DataX Channel 和 Speed 设置
+
+### 端口被占用
+①lsof -i :端口号→②sh stop.sh 再 kill -9 PID→③确认没有其他服务占用
+
+### Java 异常 NPE/NoClassDefFound
+检查 deployment 包完整性和 plugin.zip 是否正确解压
+
+### Fpml 管道无法运行
+前置条件：①在 md 数据库执行 Fpml 初始化脚本→②在目标数据库创建临时表→③先导源数据到 Fpml 临时表再创建管道
+
+## ⚡ 高频坑点（部署必查）
+1. **只改 IP 没改数据库名**（所有模块）— JDBC URL 中 /xxx 必须改成实际库名
+2. **xCalendar 前端放错路径** — 正确：前端/xCalendar/child/xCalendar
+3. **xllm 只部署了一个前端** — 需要 xllmweb + xresource 两个
+4. **AnalysisAI 依赖未就绪** — xllm+datasource+usercenter 三者必须都启动成功
+5. **xbatch 忘记 datax.zip** — 离线任务无法执行
+6. **xnlp 装了 MySQL** — 只支持 Oracle 11g
+7. **DBeaver 分隔符没检查** — [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]
+8. **数据库脚本自己写** — 脚本都在 SVN 发布包，严禁自己编造 SQL
+9. **初始化数据错误** — 脚本执行顺序混乱或升级遗漏，严格按版本号升序
+10. **Java 版本错误** — 检查机器 JDK 版本与模块要求一致
+11. **plugin.zip 未解压或路径错误** — 环境包缺少关键依赖
+12. **Nginx 未 reload** — 修改配置后必须执行 nginx -s reload
+
+## 回答规范
+- 以部署手册为准，**绝不自己编造流程、命令或 SQL**
+- 给出具体、可操作的步骤和命令，参考手册原文
+- 涉及模块的具体细节（配置文件路径、端口等）必须引用手册
+- 检测到高频坑点必须主动提醒
+- 如果用户问题超出知识库范围，引导联系对应负责人
+- 中文回答，简洁专业`;
+
+
+// ===== IMAGE =====
+function handleImageSelect(e) {
+  const files = e.target.files;
+  for (const f of files) {
+    if (!f.type.startsWith('image/')) continue;
+    if (f.size > 20*1024*1024) { alert('图片最大 20MB'); continue; }
+    const r = new FileReader();
+    r.onload = ev => { pendingImages.push({name:f.name, base64:ev.target.result}); renderPreviews(); };
+    r.readAsDataURL(f);
+  }
+  e.target.value = '';
+}
+
+document.addEventListener('paste', e => {
+  const ta = document.getElementById('userInput');
+  if (document.activeElement !== ta) return;
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  let hasImg = false;
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      hasImg = true;
+      const f = item.getAsFile();
+      if (f.size > 20*1024*1024) { alert('图片最大 20MB'); continue; }
+      const r = new FileReader();
+      r.onload = ev => { pendingImages.push({name:'clipboard-'+Date.now()+'.png', base64:ev.target.result}); renderPreviews(); };
+      r.readAsDataURL(f);
+    }
+  }
+  if (hasImg) e.preventDefault();
+});
+
+function renderPreviews() {
+  const bar = document.getElementById('imgPreviewBar');
+  bar.innerHTML = pendingImages.map((img,i) =>
+    `<div class="img-preview-item" onclick="document.getElementById('imageModalImg').src='${img.base64}';document.getElementById('imageModal').classList.add('show')">
+      <img src="${img.base64}" alt="${img.name}" />
+      <button class="rm" onclick="event.stopPropagation();removeImage(${i})">✕</button>
+    </div>`
+  ).join('');
+  bar.classList.toggle('show', pendingImages.length > 0);
+}
+function removeImage(i) { pendingImages.splice(i,1); renderPreviews(); }
+function openImageModal(src) { document.getElementById('imageModalImg').src=src; document.getElementById('imageModal').classList.add('show'); }
+function closeImageModal() { document.getElementById('imageModal').classList.remove('show'); }
+
+// ===== SETTINGS =====
+function getWsBaseUrl() {
+  const ws = WS_ID || document.getElementById('wsIdInput').value.trim();
+  return ws ? `https://${ws}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1` : 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+}
+function checkWorkspace() {
+  const m = document.getElementById('modelSelect').value;
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const grp = document.getElementById('wsGroup');
+  if (key.startsWith('sk-ws-')) {
+    grp.style.display = 'block';
+    if (WS_ID) document.getElementById('wsIdInput').value = WS_ID;
+  } else {
+    grp.style.display = 'none';
+  }
+  updateWsUrl();
+}
+function updateWsUrl() {
+  const m = document.getElementById('modelSelect').value;
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (m.startsWith('qwen') && key.startsWith('sk-ws-')) {
+    document.getElementById('apiBaseInput').value = getWsBaseUrl();
+  } else if (m.startsWith('qwen')) {
+    document.getElementById('apiBaseInput').value = 'https://dashscope.aliyuncs.com/compatible-mode/v1';
+  }
+}
+function onModelChange() {
+  const m = document.getElementById('modelSelect').value;
+  const b = document.getElementById('apiBaseInput');
+  if (m.startsWith('glm')) b.value = 'https://open.bigmodel.cn/api/paas/v4';
+  else if (m.startsWith('qwen')) b.value = getWsBaseUrl();
+  else if (m.startsWith('moonshot')) b.value = 'https://api.moonshot.cn/v1';
+  else b.value = 'https://api.deepseek.com/v1';
+  checkWorkspace();
+}
+function saveConfig() {
+  API_KEY = document.getElementById('apiKeyInput').value.trim();
+  API_BASE = document.getElementById('apiBaseInput').value.trim();
+  MODEL = document.getElementById('modelSelect').value;
+  WS_ID = document.getElementById('wsIdInput').value.trim();
+  if (!API_KEY) { alert('请输入 API Key'); return; }
+  if (MODEL.startsWith('qwen') && API_KEY.startsWith('sk-ws-') && !WS_ID) { alert('sk-ws- 类 Key 需要填写 Workspace ID'); return; }
+  localStorage.setItem('xq_api_key', API_KEY);
+  localStorage.setItem('xq_api_base', API_BASE);
+  localStorage.setItem('xq_model', MODEL);
+  localStorage.setItem('xq_ws_id', WS_ID);
+  document.getElementById('setupOverlay').classList.remove('show');
+}
+function openSettings() {
+  document.getElementById('apiKeyInput').value = API_KEY;
+  document.getElementById('modelSelect').value = MODEL;
+  document.getElementById('apiBaseInput').value = API_BASE;
+  if (WS_ID) document.getElementById('wsIdInput').value = WS_ID;
+  checkWorkspace();
+  document.getElementById('setupOverlay').classList.add('show');
+}
+document.getElementById('setupOverlay').addEventListener('click', function(e) {
+  if (e.target === this) this.classList.remove('show');
+});
+
+// ===== CHAT =====
+function addMsg(role, content, imageSrcs, isStream) {
+  const inner = document.getElementById('chatInner');
+  const w = document.getElementById('welcomeMsg');
+  if (w) w.style.display = 'none';
+
+  const div = document.createElement('div');
+  div.className = 'message ' + role;
+
+  const avatar = document.createElement('div');
+  avatar.className = 'msg-avatar ' + (role==='user'?'user':'ai');
+  if (role==='user') avatar.textContent = '👤';
+  else avatar.innerHTML = '📋';
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const roleLabel = document.createElement('div');
+  roleLabel.className = 'msg-role';
+  roleLabel.textContent = role==='user'?'你':'xQuant 部署助手';
+
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'msg-content';
+
+  let html = '';
+  if (imageSrcs && imageSrcs.length) {
+    html += imageSrcs.map((s,i) => `<img class="msg-img" src="${s}" alt="截图${i+1}" onclick="openImageModal('${s}')" />`).join('');
+  }
+  html += formatContent(content);
+  contentDiv.innerHTML = html;
+
+  // Add copy buttons to code blocks
+  contentDiv.querySelectorAll('pre').forEach(pre => {
+    pre.style.position = 'relative';
+    const btn = document.createElement('button');
+    btn.className = 'copy-btn';
+    btn.textContent = '复制';
+    btn.onclick = () => {
+      navigator.clipboard.writeText(pre.querySelector('code')?.textContent || pre.textContent);
+      btn.textContent = '已复制';
+      setTimeout(() => btn.textContent = '复制', 2000);
+    };
+    pre.appendChild(btn);
+  });
+
+  if (isStream) contentDiv.id = 'streamingContent';
+
+  body.appendChild(roleLabel);
+  body.appendChild(contentDiv);
+  div.appendChild(avatar);
+  div.appendChild(body);
+  inner.appendChild(div);
+
+  const area = document.getElementById('chatArea');
+  area.scrollTop = area.scrollHeight;
+  return contentDiv;
+}
+
+function updateStreaming(text) {
+  const el = document.getElementById('streamingContent');
+  if (el) {
+    el.innerHTML = formatContent(text);
+    document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+  }
+}
+function stopStreaming() {
+  const el = document.getElementById('streamingContent');
+  if (el) el.removeAttribute('id');
+}
+function addTyping() {
+  const inner = document.getElementById('chatInner');
+  const d = document.createElement('div');
+  d.className = 'message assistant';
+  d.id = 'typingMsg';
+  d.innerHTML = '<div class="msg-avatar ai">📋</div><div class="msg-body"><div class="msg-role">xQuant 部署助手</div><div class="msg-content" style="padding:6px 0"><span class="typing-dots"><span></span><span></span><span></span></span></div></div>';
+  inner.appendChild(d);
+  document.getElementById('chatArea').scrollTop = document.getElementById('chatArea').scrollHeight;
+}
+function removeTyping() {
+  const e = document.getElementById('typingMsg');
+  if (e) e.remove();
+}
+
+function formatContent(text) {
+  let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  html = html.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>');
+  html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_,lang,code) => `<pre><code>${code.trim()}</code></pre>`);
+  html = html.replace(/`([^`]+)`/g,'<code>$1</code>');
+  html = html.replace(/\n/g,'<br>');
+  return html;
+}
+
+// ===== VISION SUPPORT =====
+// Models that support image analysis
+// Models that support image analysis (verified working with image_url)
+const VISION_MODELS = ['deepseek-v4-flash', 'deepseek-v4-pro', 'qwen-vl-plus', 'qwen-vl-max', 'glm-4v', 'glm-4v-flash', 'moonshot-v1-8k-vision', 'moonshot-v1-32k-vision'];
+
+function modelSupportsVision() {
+  // Also check if current model name includes vision-related keywords
+  if (MODEL.includes('vl') || MODEL.includes('vision') || MODEL.includes('4v') || MODEL.includes('visual')) return true;
+  return VISION_MODELS.includes(MODEL);
+}
+
+// Sanitize messages for API: strip image_url content if model doesn't support vision
+function sanitizeMessagesForApi(messages) {
+  if (modelSupportsVision()) return messages;
+  return messages.map(msg => {
+    if (typeof msg.content === 'string') return msg;
+    if (Array.isArray(msg.content)) {
+      // Extract text parts and replace image parts with a description
+      const textParts = msg.content.filter(c => c.type === 'text').map(c => c.text);
+      const imageCount = msg.content.filter(c => c.type === 'image_url').length;
+      let text = textParts.join('\n');
+      if (imageCount > 0) {
+        text = (text ? text + '\n' : '') + '[用户上传了 ' + imageCount + ' 张截图]';
+      }
+      return { role: msg.role, content: text || '[图片]' };
+    }
+    return msg;
+  });
+}
+
+// ===== SEND =====
+async function sendMessage() {
+  if (isStreaming) return;
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  const hasImages = pendingImages.length > 0;
+  if (!text && !hasImages) return;
+  if (!API_KEY) { openSettings(); return; }
+
+  let userContent;
+  if (hasImages) {
+    userContent = pendingImages.map(img => ({type:'image_url',image_url:{url:img.base64}}));
+    if (text) userContent.push({type:'text',text});
+  } else {
+    userContent = text;
+  }
+
+  const allImages = hasImages ? pendingImages.map(i=>i.base64) : null;
+  const displayText = hasImages ? (text||'（查看图片）') : text;
+
+  input.value = ''; autoResize(input);
+  pendingImages = []; renderPreviews();
+
+  addMsg('user', displayText, allImages);
+  conversationHistory.push({role:'user', content:userContent});
+  saveHistory();
+  addTyping();
+
+  // Build API messages — sanitize for non-vision models
+  const rawMessages = [{role:'system',content:SYSTEM_PROMPT}, ...conversationHistory.slice(-20)];
+  const messages = sanitizeMessagesForApi(rawMessages);
+  isStreaming = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  try {
+    const endpoint = API_BASE.replace(/\/+$/,'') + '/chat/completions';
+    const resp = await fetch(endpoint, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
+      body: JSON.stringify({model:MODEL, messages, stream:true, temperature:0.7, max_tokens:4096})
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(()=>({}));
+      throw new Error(err.error?.message || '请求失败 ('+resp.status+')');
+    }
+
+    removeTyping();
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '', bubble = null, buffer = '';
+
+    while (true) {
+      const {done, value} = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, {stream:true});
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data==='[DONE]') continue;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content;
+          if (delta) {
+            if (!bubble) bubble = addMsg('assistant', delta, null, true);
+            else { fullContent += delta; updateStreaming(fullContent); }
+          }
+        } catch(e) {}
+      }
+    }
+
+    stopStreaming();
+    if (!bubble) fullContent = '抱歉，模型没有返回内容，请重试。';
+    else if (!fullContent) fullContent = bubble.textContent || '';
+
+    conversationHistory.push({role:'assistant', content:fullContent});
+    if (conversationHistory.length > 30) conversationHistory = conversationHistory.slice(-30);
+
+  } catch (error) {
+    removeTyping();
+    addMsg('assistant', '<div class="error-box">❌ ' + (error.message||'网络错误') + '</div>');
+    conversationHistory.push({role:'assistant', content:error.message||'网络错误'});
+  } finally {
+    saveHistory();
+    isStreaming = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('userInput').focus();
+  }
+}
+
+function quickAsk(q) {
+  document.getElementById('userInput').value = q;
+  sendMessage();
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+function handleKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  autoResize(e.target);
+}
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px'; }
+
+// ===== HISTORY =====
+function saveHistory() {
+  const slim = conversationHistory.map(m => {
+    if (Array.isArray(m.content)) {
+      const texts = m.content.filter(c=>c.type==='text').map(c=>c.text);
+      return {role:m.role, content:texts.join('\n')||'（图片）', hadImages:true};
+    }
+    return {role:m.role, content:m.content};
+  });
+  try { localStorage.setItem('xq_chat_history', JSON.stringify(slim)); } catch(e) {}
+}
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem('xq_chat_history');
+    if (!raw) return;
+    const history = JSON.parse(raw);
+    history.forEach(m => {
+      if (m.role==='user') addMsg('user', m.content, null);
+      else addMsg('assistant', m.content, null);
+    });
+    conversationHistory = history.map(m=>({role:m.role, content:m.content}));
+  } catch(e) {}
+}
+function clearChat() {
+  if (!confirm('确定清空所有对话记录？')) return;
+  conversationHistory = [];
+  localStorage.removeItem('xq_chat_history');
+  const inner = document.getElementById('chatInner');
+  inner.innerHTML = `<div class="welcome" id="welcomeMsg">
+    <div class="welcome-icon">📋</div>
+    <h1>xQuant 部署助手</h1>
+    <p>我已读完 13 份部署手册，随时为你解答。支持上传报错截图分析、多轮对话——任何部署问题都可以问。</p>
+    <div class="quick-grid">
+      <div class="quick-card" onclick="quickAsk('日历部署前端打不开怎么排查？')"><span class="qc-icon">📅</span> 日历前端打不开？</div>
+      <div class="quick-card" onclick="quickAsk('xbatch 需要什么硬件配置？')"><span class="qc-icon">📦</span> xbatch 硬件配置？</div>
+      <div class="quick-card" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序？')"><span class="qc-icon">🧠</span> AnalysisAI 依赖关系？</div>
+      <div class="quick-card" onclick="quickAsk('JDBC URL 配置要注意什么？')"><span class="qc-icon">🔌</span> 数据库连接常见坑</div>
+      <div class="quick-card" onclick="quickAsk('调度启动报数据库连接错误怎么排查？')"><span class="qc-icon">⏰</span> 调度启动报错排查</div>
+      <div class="quick-card" onclick="quickAsk('xllm 部署顺序和特殊步骤？')"><span class="qc-icon">🤖</span> xllm 部署步骤</div>
+    </div>
+  </div>`;
+}
+function newChat() { clearChat(); }
+function scrollToWelcome() {
+  document.getElementById('chatArea').scrollTo({top:0,behavior:'smooth'});
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+}
+
+// Sidebar toggle (mobile)
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  if (!API_KEY) {
+    document.getElementById('setupOverlay').classList.add('show');
+  }
+  loadHistory();
+  autoResize(document.getElementById('userInput'));
+});
+</script>
+</body>
+</html>
