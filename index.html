@@ -692,6 +692,15 @@ Redis:是
 故障排查-端口占用:①lsof -i :端口号→②sh stop.sh再kill -9 PID
 故障排查-Java异常:检查deployment包完整性和plugin.zip是否正确解压
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【调度 scheduler】
 端口:8090 Master端口:8085 配置:scheduler/conf/application.yml
 数据库:MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS
@@ -706,6 +715,15 @@ Redis:是
 故障排查-端口占用:①lsof -i :端口号→②sh stop.sh再kill -9 PID
 调度SDK(仅用户明确问"调度SDK"时才输出):Maven依赖com.xtop:xtop-scheduler-worker 版本${scheduler.version},核心步骤①YAML配置master地址端口②@XquantTaskBean注解实现XquantTask接口③doTask/shardingTask/pauseTask/stopTask,Worker注册冲突4方案:Nacos+RESTTEMPLATE/Nacos+FEIGN/非Nacos+FEIGN(ribbon)/非Nacos+FEIGN(spring.cloud.discovery)
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【工作流 workflow】
 端口:8080 配置:workflow/conf/application.yml
 数据库:MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
@@ -715,6 +733,15 @@ Redis:否
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
 故障排查-OOM:JVM参数-Xmx8192m -Xms4096m
 故障排查-端口占用:①lsof -i :端口号→②sh stop.sh再kill -9 PID
+
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
 
 【离线计算 xbatch + worker-shell】
 端口:xbatch 8999 配置:xbatch/conf/application.yml + worker-shell/conf/...
@@ -731,6 +758,15 @@ Java:JDK 8和JDK 17(双版本,两个都要装)
 故障排查-端口占用:①lsof -i :端口号→②sh stop.sh再kill -9 PID
 故障排查-Java异常:检查deployment包完整性和plugin.zip是否正确解压
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【日历 xCalendar】
 端口:见xCalendar/conf/application.yml 配置:xCalendar/conf/application.yml
 数据库:MySQL 5.7/8.0, Oracle 11g, DM, OceanBase, TDSQL
@@ -743,6 +779,15 @@ JDBC URL:jdbc:mysql://IP:3306/calendar中的/calendar要改成实际库名
 故障排查-OOM:JVM参数-Xmx8192m -Xms4096m
 故障排查-端口占用:①lsof -i :端口号→②sh stop.sh再kill -9 PID
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【实时计算 xstream】
 端口:6995 Flink Dashboard:8081 配置:xstream/conf/application.yml
 数据库:MySQL 5.7/8.0, Oracle 11g
@@ -753,6 +798,15 @@ Redis:否
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【数据服务 xDataApi】
 端口:6088 配置:xDataApi/conf/application.yml
 数据库:MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
@@ -760,6 +814,15 @@ Redis:否
 Nginx:proxy_read_timeout设600(接口可能响应慢)
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
+
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
 
 【数据源 datasource】
 端口:8093 配置:datasource/conf/application.yml
@@ -774,6 +837,15 @@ Nginx:client_max_body_size 2000m(大文件上传)
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【文档识别 xnlp 绿色版】
 端口:见xnlp/conf/application.yml 配置:xnlp/conf/application.yml
 数据库:仅Oracle 11g(不支持MySQL！)
@@ -783,12 +855,30 @@ Redis:否
 部署后:通过Web UI导入最新标准模板
 故障排查-数据库连接被拒:①telnet DB_IP 1521→②sqlplus试连→③确认Oracle服务正常运行
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【血缘 xdatamap】
 端口:见xdatamap/conf/application.yml 配置:xdatamap/conf/application.yml
 数据库:MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
 Redis:否
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
+
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
 
 【报表 report】
 端口:见report/conf/application.yml 配置:report/conf/application.yml
@@ -799,6 +889,15 @@ Redis:否
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
 
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
+
 【智能分析 AnalysisAI】
 端口:见AnalysisAI/conf/application.yml 配置:AnalysisAI/conf/application.yml
 数据库:仅MySQL 5.7
@@ -807,6 +906,15 @@ Redis:否
 缺失任一依赖会导致启动失败或功能异常
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
+
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
 
 【智能体 xllm 绿色版】
 端口:见xllm/conf/application.yml 配置:xllm/conf/application.yml
@@ -820,6 +928,15 @@ Redis:是
 故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO 'user'@'%'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306
 故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload
 故障排查-OOM:JVM参数-Xmx8192m -Xms4096m
+
+
+部署流程（通用6阶段，必须完整输出）：
+阶段1-获取部署包: 从SVN获取部署包(模块名/)和环境包(plugin.zip)。特殊: xbatch需要额外datax.zip, xnlp首次需要paddle.tar.gz, xllm需要miniforge3.zip+xllmmodelservice/。SVN路径问题联系张月芬，权限问题联系何美笑。
+阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取，严禁自己写SQL。首次部署: 取init/目录，严格按序 ①01_xx_ddl.sql → ②02_PROCEDURE_xx.sql → ③03_xx_dml.sql。升级部署: 取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具: MySQL/Oracle用DBeaver（检查分隔符: [窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符]），OceanBase用ODC。信创环境优先TDSQL-MySQL，非信创MySQL 5.7。
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录必须和environmentpackage同级。
+阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证命令: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log。停止: sh stop.sh。常见失败原因: 数据库未初始化、start.sh无执行权限、Java版本不对、配置错误、端口冲突。
+阶段5-前端部署: 独立部署: 配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署: 配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。注意: usercenter无独立前端（仅集成模式），worker-shell无独立前端，xllm有两个前端(xllmweb+xresource)都要部署，xnlp部署后需通过Web UI导入标准模板。
+阶段6-验证检查: Web页面登录成功、菜单渲染正常、核心功能可用、日志无错误、数据库连接正常、依赖服务连通。
 
 联系人:SVN路径→张月芬 | 权限→何美笑 | 疑难→范能科 | JIRA密码→质量部
 
