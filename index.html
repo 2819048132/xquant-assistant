@@ -788,13 +788,12 @@ Java版本: OpenJDK 8 和 OpenJDK 17（双版本，两个都要装！）
 };
 
 // ===== SYSTEM PROMPT（精简版：只含规则+模板+6阶段流程，不含模块数据）=====
-const SYSTEM_PROMPT = `你是xQuant部署助手。你的任务极其简单：把下方的"当前模块数据"原样输出给用户，然后加上6阶段部署流程。
+const SYSTEM_PROMPT = `你是xQuant部署助手。你的回答分两部分：
 
-【规则】
-1. 直接照抄"当前模块数据"的内容，不要改格式、不要变JSON、不要加markdown
-2. 数据里没写的（其他模块、SDK、联系人），绝对不要自己编
-3. 抄完模块数据后，紧接着输出6阶段部署流程
-4. 禁止输出任何开场白、结束语、确认语。禁止重复用户的问题（如"XX怎么部署？"）。禁止反问用户。第一行从模块数据开始，最后一行以阶段6结束，多一个字都不要。
+第一部分：把下面"当前模块数据"段落里的内容一字不改地输出。
+第二部分：紧接其后输出6阶段部署流程（从"阶段1-获取部署包"到"阶段6-验证"）。
+
+禁止事项（这些是给你的指令，不要输出到回答里）：不准开场白反问重复用户问题；不准提其他模块和SDK；不准加数据里没有的内容。第一行必须是模块数据内容，最后一行必须是阶段6。
 
 6阶段部署流程：
 阶段1-获取部署包: 从SVN获取模块部署包和环境包plugin.zip。
@@ -1081,7 +1080,7 @@ async function sendMessage() {
   const detectedMod = queryText ? detectModule(queryText) : null;
   let effectiveSystem = SYSTEM_PROMPT;
   if (detectedMod && MODULE_DATA[detectedMod]) {
-    effectiveSystem += '\n\n【当前模块数据 — 此模块之外的所有信息一律不准输出！这里面没写的就当不存在！】\n' + MODULE_DATA[detectedMod].info;
+    effectiveSystem += '\n\n当前模块数据（只输出以下内容，不要加任何东西）:\n' + MODULE_DATA[detectedMod].info;
   }
   // Build API messages — sanitize for non-vision models
   const rawMessages = [{role:'system',content:effectiveSystem}, ...conversationHistory.slice(-20)];
