@@ -1138,7 +1138,7 @@ async function sendMessage() {
     const resp = await fetch(endpoint, {
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY},
-      body: JSON.stringify({model:MODEL, messages, stream:true, temperature:0.7, max_tokens:4096})
+      body: JSON.stringify({model:MODEL, messages, stream:true, temperature:0.7, max_tokens:1024})
     });
 
     if (!resp.ok) {
