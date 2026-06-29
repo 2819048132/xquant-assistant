@@ -654,55 +654,136 @@ let pendingImages = [];
 const MODULE_DATA = {
   usercenter: {
     keywords: ['usercenter','用户中心','用户管理','997001'],
-    info: '—— 用户中心 usercenter ——\n端口: 1184\n配置文件: usercenter/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g, DM V8, OceanBase, TDSQL\n需要Redis: 是\n前端: 无独立前端，仅集成模式(微前端主从架构)\n超管账号: 997001\n升级: 按版本号从小到大执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload\n· OOM: JVM参数-Xmx8192m -Xms4096m\n· 端口占用: lsof -i :端口号 → sh stop.sh再kill -9 PID\n· Java异常: 检查deployment包完整性和plugin.zip是否正确解压'
+    info: `—— 用户中心 usercenter ——
+数据库: MySQL 5.7/8.0, Oracle 11g, DM V8, OceanBase, TDSQL
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 是
+容器: Tomcat / 宝蓝德 / 东方通
+前端: 无独立前端，仅集成模式`
   },
   scheduler: {
     keywords: ['scheduler','调度','调度器','worker注册','master','心跳','tcalendar','tsys_acc'],
-    info: '—— 调度 scheduler ——\n端口: 8090, Master端口: 8085\n配置文件: scheduler/conf/application.yml\n数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS\n需要Redis: 是\n部署前准备: ①配置日历数据tcalendar/tcalendar_dates ②导入账户数据tsys_acc_secu/tsys_acc_secu_tree ③Worker注册(Nacos或REST模式)\n心跳超时: master开始补偿work → 调大timeOut到120000\n执行策略: 定时执行、CRON表达式、信号回溯\n\n坑点/故障排查:\n· 心跳超时数据重复: 症状"master开始补偿work[xxx]宕机的任务" → 调大timeOut到120000(2分钟)\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 调度 scheduler ——
+数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 是
+容器: Tomcat / 宝蓝德 / 东方通
+特殊步骤: 必须配置Redis连接
+
+常见故障排查:
+1. 心跳超时导致数据重复: 日志出现"master开始补偿work[xxx]宕机的任务"→调大参数xquant.scheduler.timeOut值为120000(2分钟)
+2. 服务启动失败报Access denied: telnet确认网络→检查数据库远程链接权限→确认密码/加密配置正确
+3. Worker向Master注册失败(向[http://xxx:xx]注册请求失败，原因null): 业务系统自定义RestTemplate冲突→方案一Nacos+RESTTEMPLATE→方案二Nacos+FEIGN`
   },
   workflow: {
     keywords: ['workflow','工作流'],
-    info: '—— 工作流 workflow ——\n端口: 8080\n配置文件: workflow/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL\n需要Redis: 否\n容器: Tomcat\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 工作流 workflow ——
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat`
   },
   xbatch: {
     keywords: ['xbatch','离线','worker-shell','datax','离计算'],
-    info: '—— 离线 xbatch ——\n端口: 8999\n配置文件: xbatch/conf/application.yml 和 worker-shell/conf/...\n数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, OceanBase-Oracle\n需要Redis: 否\n硬件要求: CPU 8核 / 内存 16G\nJava: JDK 8 和 JDK 17（双版本，两个都要装！）\n特殊包: datax.zip（数据交换引擎，必须解压，否则离线任务无法执行）\n部署: xbatch 和 worker-shell 分别部署，各有独立脚本/配置/启停\n前端: worker-shell 无独立前端\n管道: 通用管道(SQL入库/表对表/拉链表/Fpml/文件导入/大数据迁移)、通用脚本(SQL/Shell/Python)、专用管道、集成方案\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload\n· OOM: JVM参数-Xmx8192m -Xms4096m, xbatch至少分配16G物理内存, 检查DataX Channel和Speed设置\n· 端口占用: lsof -i :端口号 → sh stop.sh再kill -9 PID\n· Java异常: 检查deployment包完整性和plugin.zip是否正确解压'
+    info: `—— 离线 xbatch & worker-shell ——
+数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, OceanBase-Oracle
+硬件: 500G磁盘 / 16G内存 / 8核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通
+Java版本: OpenJDK 8 和 OpenJDK 17（双版本，两个都要装！）
+特殊包: datax.zip（数据交换引擎，必须解压！除plugin.zip外的额外包）
+特殊步骤: xbatch 和 worker-shell 分别部署，各有独立的数据库脚本、后端配置、启停脚本。worker-shell无独立前端`
   },
   xCalendar: {
     keywords: ['xcalendar','日历','calendar'],
-    info: '—— 日历 xCalendar ——\n端口: 见xCalendar/conf/application.yml\n配置文件: xCalendar/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g, DM, OceanBase, TDSQL\n需要Redis: 否\n前端: 前端/xCalendar/child/xCalendar（注意是child/xCalendar,不是直接xCalendar！）\nJDBC URL: jdbc:mysql://IP:3306/calendar 中的 /calendar 要改成实际库名\n前端支持独立部署和集成部署两种\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 日历 xCalendar ——
+数据库: MySQL 5.7, Oracle 11g, DM
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通
+特殊步骤: 前端dist路径是 前端/xCalendar/child/xCalendar（不是 前端/xCalendar！放错目录是常见问题，前端加载不出来优先检查这个路径）`
   },
   xstream: {
     keywords: ['xstream','实时','flink','实时计算'],
-    info: '—— 实时计算 xstream ——\n端口: 6995, Flink Dashboard: 8081\n配置文件: xstream/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g\n需要Redis: 否\n容器: Tomcat\n依赖: Flink(端口8081)\n\n坑点/故障排查:\n· Flink CDC自动停止: 修复flink-conf.yaml restart-strategy:fixed-delay attempts:5 delay:30s → 重启./bin/stop-cluster.sh && ./bin/start-cluster.sh\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 实时计算 xstream ——
+数据库: MySQL 5.7/8.0, Oracle 11g
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat
+
+常见故障排查:
+1. MySQL CDC任务自动停止: 数据库连不上导致Flink任务失败→修改flink-conf.yaml添加restart-strategy:fixed-delay attempts:5 delay:30s→重启Flink
+2. SQL Server CDC任务自动停止: 数据库连不上导致→同上添加自动重试配置→重启Flink`
   },
   xDataApi: {
     keywords: ['xdataapi','数据服务','xDataApi','dataapi'],
-    info: '—— 数据服务 xDataApi ——\n端口: 6088\n配置文件: xDataApi/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL\n需要Redis: 否\n特殊配置: Nginx proxy_read_timeout 设600（接口可能响应慢）\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 数据服务 xDataApi ——
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通`
   },
   datasource: {
     keywords: ['datasource','数据源'],
-    info: '—— 数据源 datasource ——\n端口: 8093\n配置文件: datasource/conf/application.yml\n数据库: MySQL 5.7, Oracle 11g, DM, GAUSS\n需要Redis: 否\n特殊配置: Nginx client_max_body_size 2000m（大文件上传）\n前置依赖: 是 workflow/xnlp/report 等模块的前置依赖，必须先部署\n\n坑点/故障排查:\n· HDFS Kerberos认证失败: 症状"SIMPLE authentication is not enabled" → 在数据源连接配置页开启Kerberos认证 → kinit -kt /path/to/keytab principal → klist确认ticket\n· HDFS Standby NameNode故障: 症状"Operation category READ is not supported in state standby" → DefaultFS输入全部HDFS节点地址(nameservice)实现自动failover\n· Oracle写入慢TPS<10000: SGA/PGA调优(16G内存→SGA 4G PGA 2G) → 索引太多先导数据再建索引 → 大字段CLOB/BLOB预期内慢 → DataX GC检查full GC → AWR报告定位瓶颈\n· GBASE8a特殊字符错乱: 使用SQL管道模式源查询中将特殊字符字段转换为普通字符\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 数据源 datasource ——
+数据库: MySQL 5.7, Oracle 11g, DM, GAUSS
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德
+
+常见故障排查:
+1. GBASE8A同步数据包含特殊字符: 字段中含\\u0001\\u0002等分隔符导致解析失败→使用SQL管道模式将特殊字符字段转为普通字符
+2. 连接HDFS报SIMPLE authentication错误: HDFS开启Kerberos认证但未使用→使用Kerberos认证方式连接
+3. 连接HDFS报Operation category READ not supported in state standby: DefaultFS只配了一个Standby节点→将所有HDFS节点地址都写上实现自动failover
+4. Oracle写入慢TPS<10000: ①SGA/PGA设置过小(16G内存→SGA 4G/PGA 2G)→调大 ②索引太多→先导数据再建索引 ③大字段CLOB/BLOB多→慢是正常的 ④DataX频繁GC→检查full GC ⑤拉取AWR报告定位瓶颈`
   },
   xnlp: {
     keywords: ['xnlp','文档识别','文档解析','nlp','paddle'],
-    info: '—— 文档识别 xnlp ——\n端口: 见xnlp/conf/application.yml\n配置文件: xnlp/conf/application.yml\n数据库: 仅Oracle 11g（不支持MySQL！）\n需要Redis: 否\n版本: 绿色版，免安装，自带运行环境\n特殊包: paddle.tar.gz（首次部署需要解压，版本迭代不需要）\n部署后: 通过Web UI导入最新标准模板\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 1521 → sqlplus试连 → 确认Oracle服务正常运行'
+    info: `—— 文档识别 xnlp（绿色版） ——
+数据库: 仅Oracle 11g（不支持MySQL！）
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通
+特殊包: paddle.tar.gz（Python环境包，首次部署需要解压，版本迭代不需要）
+特殊步骤: 部署完成后通过Web UI导入最新标准模板`
   },
   xdatamap: {
     keywords: ['xdatamap','血缘','数据地图','datamap'],
-    info: '—— 血缘 xdatamap ——\n端口: 见xdatamap/conf/application.yml\n配置文件: xdatamap/conf/application.yml\n数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL\n需要Redis: 否\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 血缘 xdatamap ——
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通`
   },
   report: {
     keywords: ['report','报表'],
-    info: '—— 报表 report ——\n端口: 见report/conf/application.yml\n配置文件: report/conf/application.yml\n数据库: MySQL 5.7, Oracle 11g, DM, GAUSS\n需要Redis: 否\n特殊依赖: 需要无头浏览器（渲染报表导出PDF），x86环境需安装libX11/libXext/libXrender/libGL\n验证: ldd chrome-headless-shell|grep "not found"\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 报表 report ——
+数据库: MySQL 5.7, Oracle 11g, DM, GAUSS
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通
+特殊步骤: 需要无头浏览器（渲染报表导出PDF），x86环境需安装libX11/libXext/libXrender/libGL等系统库，用 ldd chrome-headless-shell|grep "not found" 验证缺失的库`
   },
   AnalysisAI: {
     keywords: ['analysisai','智能分析','investai'],
-    info: '—— 智能分析 AnalysisAI ——\n端口: 见AnalysisAI/conf/application.yml\n配置文件: AnalysisAI/conf/application.yml\n数据库: 仅MySQL 5.7\n需要Redis: 否\n脚本目录: 数据库脚本/investai/\n硬依赖（三个都必须已部署且运行正常后才能部署，缺一不可！）: datasource + xllm + usercenter\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 智能分析 AnalysisAI ——
+数据库: 仅MySQL 5.7
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat
+硬依赖（三个都必须已部署且运行正常后才能部署，缺一不可！）: datasource、xllm、usercenter`
   },
   xllm: {
     keywords: ['xllm','智能体','llm','大模型','xllmweb','xresource','miniforge','xllmmodel'],
-    info: '—— 智能体 xllm ——\n端口: 见xllm/conf/application.yml\n配置文件: xllm/conf/application.yml\n数据库: 仅MySQL 5.7\n需要Redis: 是\n版本: 绿色版，免安装\n特殊包: miniforge3.zip(Python环境) + xllmmodelservice/(大模型服务)，两个都要部署！\n前端: 有2个前端 xllmweb 和 xresource，两个都要部署！\n自身部署顺序（严格按序）: plugin → miniforge3 → xllmModelService → 后端 → 前端(xllmweb + xresource)\n软依赖: datasource(读库Agent)、xDataApi(接口注册/工作流插件)、usercenter(鉴权/智能体中心/知识库管理/钉钉鉴权)\n\n坑点/故障排查:\n· 数据库连接被拒: telnet DB_IP 3306 → mysql客户端试连 → GRANT ALL ON xtop.* TO \'user\'@\'%\' → 若加密密码检查jasypt.encryptor.password → 确认防火墙3306\n· 前端500: ps -elf|grep java → 检查Nginx proxy_pass → tail -f nginx/logs/error.log → nginx -t && nginx -s reload'
+    info: `—— 智能体 xllm（绿色版） ——
+数据库: 仅MySQL 5.7
+硬件: 500G磁盘 / 8G内存 / 4核CPU
+需要Redis: 否
+容器: Tomcat / 宝蓝德 / 东方通
+特殊包: miniforge3.zip（Python环境）、xllmmodelservice/（大模型服务，包含app/、knowledge_bases/、start.sh、stop.sh）
+前端: 有2个前端 xllmweb 和 xresource，两个都要部署！
+自身部署顺序（严格按序）: plugin → miniforge3 → xllmModelService → 后端 → 前端(xllmweb + xresource)
+软依赖: datasource(读库Agent)、xDataApi(接口注册/工作流插件)、usercenter(鉴权/智能体中心/知识库管理/钉钉鉴权)`
   }
 };
 
