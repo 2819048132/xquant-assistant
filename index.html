@@ -658,7 +658,7 @@ const MODULE_DATA = {
   },
   scheduler: {
     keywords: ['scheduler','调度','调度器','worker注册','master','心跳','tcalendar','tsys_acc'],
-    info: '端口:8090 | Master端口:8085 | 配置:scheduler/conf/application.yml\n数据库:MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS\nRedis:是\n部署后前置:①配置日历数据tcalendar/tcalendar_dates ②导入账户数据tsys_acc_secu/tsys_acc_secu_tree ③Worker注册(Nacos或REST模式)\n心跳超时:master开始补偿work→调大timeOut到120000\n执行策略:定时执行、CRON表达式、信号回溯\n故障排查-心跳超时数据重复:症状"master开始补偿work[xxx]宕机的任务"→调大timeOut到120000(2分钟)\n故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO \'user\'@\'%\'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306\n故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload\n调度SDK(仅用户明确问"调度SDK"时才输出):Maven依赖com.xtop:xtop-scheduler-worker版本${scheduler.version}，核心步骤①YAML配置master地址端口②@XquantTaskBean注解实现XquantTask接口③doTask/shardingTask/pauseTask/stopTask，Worker注册冲突4方案:Nacos+RESTTEMPLATE/Nacos+FEIGN/非Nacos+FEIGN(ribbon)/非Nacos+FEIGN(spring.cloud.discovery)'
+    info: '端口:8090 | Master端口:8085 | 配置:scheduler/conf/application.yml\n数据库:MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS\nRedis:是\n部署后前置:①配置日历数据tcalendar/tcalendar_dates ②导入账户数据tsys_acc_secu/tsys_acc_secu_tree ③Worker注册(Nacos或REST模式)\n心跳超时:master开始补偿work→调大timeOut到120000\n执行策略:定时执行、CRON表达式、信号回溯\n故障排查-心跳超时数据重复:症状"master开始补偿work[xxx]宕机的任务"→调大timeOut到120000(2分钟)\n故障排查-数据库连接被拒:①telnet DB_IP 3306→②mysql客户端试连→③GRANT ALL ON xtop.* TO \'user\'@\'%\'→④若加密密码检查jasypt.encryptor.password→⑤确认防火墙3306\n故障排查-前端500:①ps -elf|grep java→②检查Nginx proxy_pass→③tail -f nginx/logs/error.log→④nginx -t && nginx -s reload\n'
   },
   workflow: {
     keywords: ['workflow','工作流'],
@@ -709,11 +709,11 @@ const MODULE_DATA = {
 // ===== SYSTEM PROMPT（精简版：只含规则+模板+6阶段流程，不含模块数据）=====
 const SYSTEM_PROMPT = `你是xQuant部署助手。
 
-【铁律】
-1. 只从下面"当前模块数据"中提取内容回答，一字不多一字不少
-2. 严格按回答模板格式输出
-3. 不准提其他模块名，不准说"SDK"
-4. 不准说套话、建议、总结、评价
+【死命令 — 违反任何一条就完全答错】
+1. 只能从下方"当前模块数据"原文中照抄内容。数据里没写的，一个字都不准加。自以为有用？不准加。其他模块有类似内容？不准加。你觉得用户可能想知道？不准加。
+2. 严格按回答模板格式逐项输出，不允许省略、跳过、合并任何一项。
+3. 永远不准输出"SDK"二字。永远不准输出当前模块数据中没有的模块名称。
+4. 不准说任何套话、建议、总结、评价、开头语、结束语。
 
 【回答模板—用户问某个模块怎么部署时，严格按此格式逐项输出】
 数据库：
@@ -722,7 +722,7 @@ const SYSTEM_PROMPT = `你是xQuant部署助手。
 需要Redis：
 依赖/特殊包/硬件：
 前端：
-坑点：
+坑点（只写当前模块数据中「故障排查」的内容）：
 通用注意事项：JDBC URL数据库名必须改成实际库名；DBeaver执行SQL前检查分隔符([窗口]→[首选项]→[编辑器]→[SQL编辑器]→[SQL处理]→[分隔符])；脚本从SVN发布包获取严禁自己写SQL；脚本严格按版本号升序执行；plugin.zip必须解压且模块目录与environmentpackage同级；修改Nginx后必须nginx -t && nginx -s reload
 
 6阶段部署流程：
@@ -1012,7 +1012,7 @@ async function sendMessage() {
   const detectedMod = queryText ? detectModule(queryText) : null;
   let effectiveSystem = SYSTEM_PROMPT;
   if (detectedMod && MODULE_DATA[detectedMod]) {
-    effectiveSystem += '\n\n————当前模块精确数据（你只能从下面提取内容，不能编造！不能提其他模块！）————\n' + MODULE_DATA[detectedMod].info;
+    effectiveSystem += '\n\n【当前模块数据 — 此模块之外的所有信息一律不准输出！这里面没写的就当不存在！】\n' + MODULE_DATA[detectedMod].info;
   }
   // Build API messages — sanitize for non-vision models
   const rawMessages = [{role:'system',content:effectiveSystem}, ...conversationHistory.slice(-20)];
