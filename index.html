@@ -653,140 +653,246 @@ let pendingImages = [];
 // ===== 模块精确数据（按需注入，避免一次性塞13个模块导致幻觉）=====
 const MODULE_DATA = {
   usercenter: {
-    keywords: ['usercenter','用户中心','用户管理','997001'],
-    info: `—— 用户中心 usercenter ——
-数据库: MySQL 5.7/8.0, Oracle 11g, DM V8, OceanBase, TDSQL
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    keywords: ['usercenter','用户中心','用户管理'],
+    info: `===== 用户中心 usercenter =====
+
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OCEANBASE-MySQL, OCEANBASE-Oracle, TDSQL-MySQL
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 是
 容器: Tomcat / 宝蓝德 / 东方通
-前端: 无独立前端，仅集成模式`
+特殊步骤: 必须配置Redis连接; 无独立前端(仅集成模式——微前端主从架构)
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取usercenter部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/script/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC, 信创优先TDSQL-MySQL
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接/Redis) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 仅集成模式 → 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、菜单正常、Redis连通、数据库正常`
   },
   scheduler: {
-    keywords: ['scheduler','调度','调度器','worker注册','master','心跳','tcalendar','tsys_acc'],
-    info: `—— 调度 scheduler ——
-数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, GAUSS
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    keywords: ['scheduler','调度','调度器','worker','master','心跳'],
+    info: `===== 调度 scheduler =====
+
+数据库: MySQL 5.7, Oracle 11g, OCEANBASE-MySQL, TDSQL-MySQL, DM, GAUSS
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 是
 容器: Tomcat / 宝蓝德 / 东方通
-特殊步骤: 必须配置Redis连接`
+特殊步骤: 必须配置Redis连接
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取scheduler部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/scheduler/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC, 信创优先TDSQL-MySQL → 部署后需配置日历数据(tcalendar/tcalendar_dates)和导入账户数据(tsys_acc_secu/tsys_acc_secu_tree)
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接/Redis) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_scheduler_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、菜单正常、Worker注册成功、心跳正常、Redis连通、数据库正常`
   },
   workflow: {
     keywords: ['workflow','工作流'],
-    info: `—— 工作流 workflow ——
-数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    info: `===== 工作流 workflow =====
+
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OCEANBASE-MySQL, OCEANBASE-Oracle, TDSQL-MySQL
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
-容器: Tomcat`
+容器: 仅Tomcat
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取workflow部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/workflow/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC, 信创优先TDSQL-MySQL
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_workflow_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、菜单正常、工作流可创建执行、数据库正常`
   },
   xbatch: {
     keywords: ['xbatch','离线','worker-shell','datax','离计算'],
-    info: `—— 离线 xbatch & worker-shell ——
-数据库: MySQL 5.7, Oracle 11g, OceanBase-MySQL, TDSQL, DM, OceanBase-Oracle
-硬件: 500G磁盘 / 16G内存 / 8核CPU
+    info: `===== 离线 xbatch & worker-shell =====
+
+数据库: MySQL 5.7, Oracle 11g, OCEANBASE-MySQL, TDSQL-MySQL, DM, OCEANBASE-Oracle
+硬件: 500G磁盘, 16G内存, 8核CPU(注意: 比其他模块高!)
+Java: OpenJDK 8 和 OpenJDK 17 双版本须同时安装
 需要Redis: 否
 容器: Tomcat / 宝蓝德 / 东方通
-Java版本: OpenJDK 8 和 OpenJDK 17（双版本，两个都要装！）
-特殊包: datax.zip（数据交换引擎，必须解压！除plugin.zip外的额外包）
-特殊步骤: xbatch 和 worker-shell 分别部署，各有独立的数据库脚本、后端配置、启停脚本。worker-shell无独立前端`
+特殊包: datax.zip(数据交换引擎, 除plugin.zip外必须解压!)
+特殊步骤: xbatch和worker-shell分别部署, 各有独立数据库脚本/后端配置/启停脚本; worker-shell无独立前端
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取离线部署包(xbatch + worker-shell) + 环境包plugin.zip + datax.zip
+阶段2-数据库部署: xbatch脚本路径 数据库脚本/ → worker-shell脚本路径 数据库脚本/worker-shell/ → 分别按序执行, 首次init/ 升级update/ → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级) → 解压datax.zip
+阶段4-后端部署: xbatch: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh; worker-shell: 上传后端包 → 修改conf/application.yml → sh start.sh → 分别验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log
+阶段5-前端部署: xbatch前端: 独立/集成部署; worker-shell: 无独立前端, 仅集成模式
+阶段6-验证: xbatch登录正常、离线任务可提交执行、DataX通道正常、数据库正常`
   },
   xCalendar: {
     keywords: ['xcalendar','日历','calendar'],
-    info: `—— 日历 xCalendar ——
+    info: `===== 日历 xCalendar =====
+
 数据库: MySQL 5.7, Oracle 11g, DM
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
 容器: Tomcat / 宝蓝德 / 东方通
-特殊步骤: 前端dist路径是 前端/xCalendar/child/xCalendar（不是 前端/xCalendar！放错目录是常见问题，前端加载不出来优先检查这个路径）`
+特殊步骤: 前端dist路径是 前端/xCalendar/child/xCalendar(注意: 不是 前端/xCalendar! 放错目录导致前端加载不出来是常见问题)
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取xCalendar部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/dbscript/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 注意! dist放 前端/xCalendar/child/xCalendar(不是 前端/xCalendar!) → 独立部署: 配nginx_xCalendar_duli.conf → nginx -s reload; 集成部署: 上传到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、日历显示正常、节假日配置正常、数据库正常`
   },
   xstream: {
     keywords: ['xstream','实时','flink','实时计算'],
-    info: `—— 实时计算 xstream ——
+    info: `===== 实时计算 xstream =====
+
 数据库: MySQL 5.7/8.0, Oracle 11g
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
-容器: Tomcat`
+容器: Tomcat
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取xstream部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/xstream/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_xstream_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、Flink任务可提交运行、CDC数据同步正常、数据库正常`
   },
   xDataApi: {
     keywords: ['xdataapi','数据服务','xDataApi','dataapi'],
-    info: `—— 数据服务 xDataApi ——
-数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    info: `===== 数据服务 xDataApi =====
+
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OCEANBASE-MySQL, OCEANBASE-Oracle, TDSQL-MySQL
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
-容器: Tomcat / 宝蓝德 / 东方通`
+容器: Tomcat / 宝蓝德 / 东方通
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取xDataApi部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC, 信创优先TDSQL-MySQL
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_xDataApi_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、API接口可调用、数据库正常`
   },
   datasource: {
     keywords: ['datasource','数据源'],
-    info: `—— 数据源 datasource ——
+    info: `===== 数据源 datasource =====
+
 数据库: MySQL 5.7, Oracle 11g, DM, GAUSS
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
-容器: Tomcat / 宝蓝德`
+容器: Tomcat / 宝蓝德
+特殊步骤: 是workflow/xnlp/report等模块的前置依赖, 必须先部署
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取datasource部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/datasource/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_datasource_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、数据源连接测试通过、数据库正常`
   },
   xnlp: {
     keywords: ['xnlp','文档识别','文档解析','nlp','paddle'],
-    info: `—— 文档识别 xnlp（绿色版） ——
-数据库: 仅Oracle 11g（不支持MySQL！）
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    info: `===== 文档识别 xnlp(绿色版) =====
+
+数据库: 仅Oracle 11g(不支持MySQL!)
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
 容器: Tomcat / 宝蓝德 / 东方通
-特殊包: paddle.tar.gz（Python环境包，首次部署需要解压，版本迭代不需要）
-特殊步骤: 部署完成后通过Web UI导入最新标准模板`
+特殊包: paddle.tar.gz(Python环境包, 首次部署需解压, 版本迭代不需要)
+特殊步骤: 部署完成后通过Web UI导入最新标准模板
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取xnlp部署包 + 环境包plugin.zip + paddle.tar.gz(首次部署)
+阶段2-数据库部署: 脚本路径 数据库脚本/xnlp/ → 仅支持Oracle 11g! → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: Oracle用DBeaver
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级) → 首次部署额外解压paddle.tar.gz(Python环境)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(Oracle连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_xnlp_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、文档上传识别正常、标准模板已导入、Oracle数据库正常`
   },
   xdatamap: {
     keywords: ['xdatamap','血缘','数据地图','datamap'],
-    info: `—— 血缘 xdatamap ——
-数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OceanBase, TDSQL
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+    info: `===== 血缘 xdatamap =====
+
+数据库: MySQL 5.7/8.0, Oracle 11g, DM-Oracle V8, OCEANBASE-MySQL, OCEANBASE-Oracle, TDSQL-MySQL
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
-容器: Tomcat / 宝蓝德 / 东方通`
+容器: Tomcat / 宝蓝德 / 东方通
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取xdatamap部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC, 信创优先TDSQL-MySQL
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_xdatamap_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、血缘图谱正常展示、数据库正常`
   },
   report: {
     keywords: ['report','报表'],
-    info: `—— 报表 report ——
+    info: `===== 报表 report =====
+
 数据库: MySQL 5.7, Oracle 11g, DM, GAUSS
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
 容器: Tomcat / 宝蓝德 / 东方通
-特殊步骤: 需要无头浏览器（渲染报表导出PDF），x86环境需安装libX11/libXext/libXrender/libGL等系统库，用 ldd chrome-headless-shell|grep "not found" 验证缺失的库`
+特殊步骤: 需要无头浏览器(渲染报表导出PDF), x86环境需安装libX11/libXext/libXrender/libGL等系统库 → ldd chrome-headless-shell|grep "not found" 验证缺失的库 → chmod +x
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取report部署包 + 环境包plugin.zip
+阶段2-数据库部署: 脚本路径 数据库脚本/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL/Oracle用DBeaver, OceanBase用ODC
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh → x86环境安装无头浏览器依赖libX11/libXext/libXrender/libGL
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_report_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、报表可查看、PDF导出正常(无头浏览器可运行)、数据库正常`
   },
   AnalysisAI: {
     keywords: ['analysisai','智能分析','investai'],
-    info: `—— 智能分析 AnalysisAI ——
+    info: `===== 智能分析 AnalysisAI =====
+
 数据库: 仅MySQL 5.7
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
 容器: Tomcat
-硬依赖（三个都必须已部署且运行正常后才能部署，缺一不可！）: datasource、xllm、usercenter`
+硬依赖(缺一不可!): datasource、xllm、usercenter 三个都须已部署且运行正常后, 才能部署AnalysisAI
+
+部署步骤:
+阶段1-获取部署包: 从SVN获取AnalysisAI部署包 + 环境包plugin.zip → 前置检查: 确认datasource/xllm/usercenter三个依赖服务均已部署且运行正常
+阶段2-数据库部署: 脚本路径 数据库脚本/investai/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL用DBeaver
+阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: 独立部署: 配置菜单路由 → 上传dist → 配nginx_AnalysisAI_duli.conf → nginx -s reload; 集成部署: 配置菜单路由 → 上传dist到主平台child/目录 → 合并nginx → nginx -s reload
+阶段6-验证: 登录正常、智能分析功能可用、datasource/xllm/usercenter依赖服务连通、数据库正常`
   },
   xllm: {
     keywords: ['xllm','智能体','llm','大模型','xllmweb','xresource','miniforge','xllmmodel'],
-    info: `—— 智能体 xllm（绿色版） ——
+    info: `===== 智能体 xllm(绿色版) =====
+
 数据库: 仅MySQL 5.7
-硬件: 500G磁盘 / 8G内存 / 4核CPU
+硬件: 500G磁盘, 8G内存, 4核CPU
 需要Redis: 否
 容器: Tomcat / 宝蓝德 / 东方通
-特殊包: miniforge3.zip（Python环境）、xllmmodelservice/（大模型服务，包含app/、knowledge_bases/、start.sh、stop.sh）
-前端: 有2个前端 xllmweb 和 xresource，两个都要部署！
-自身部署顺序（严格按序）: plugin → miniforge3 → xllmModelService → 后端 → 前端(xllmweb + xresource)
-软依赖: datasource(读库Agent)、xDataApi(接口注册/工作流插件)、usercenter(鉴权/智能体中心/知识库管理/钉钉鉴权)`
+特殊包: miniforge3.zip(Python环境) + xllmmodelservice/(大模型服务, 包含app/、knowledge_bases/、start.sh、stop.sh)
+前端: 2个前端 xllmweb(智能体界面) + xresource(资源管理界面), 两个都要部署!
+软依赖: datasource(读库Agent)、xDataApi(接口注册/工作流插件)、usercenter(鉴权/智能体中心/知识库管理/钉钉鉴权)
+
+部署步骤(严格按此顺序!):
+阶段1-获取部署包: 从SVN获取xllm部署包 + 环境包(miniforge3.zip) + xllmmodelservice/大模型服务包
+阶段2-数据库部署: 脚本路径 数据库脚本/xllm/ → 首次取init/按序01→02→03.sql执行; 升级取update/按版本号升序执行 → 工具: MySQL用DBeaver
+阶段3-环境包部署: ①cd /home/xtop/environmentpackage/ && unzip plugin.zip(模块目录与environmentpackage同级) → ②解压miniforge3.zip(Python环境) → ③部署xllmModelService大模型服务(sh start.sh)
+阶段4-后端部署: 上传后端包 → 修改conf/application.yml(数据库连接) → sh start.sh → 验证: ps -elf|grep java, netstat -tlnp|grep 端口, tail -200f logs/xxx.log → 停止: sh stop.sh
+阶段5-前端部署: xllmweb: 配置菜单路由 → 上传dist; xresource: 配置菜单路由 → 上传dist → 两个前端都要独立/集成部署 → nginx -s reload
+阶段6-验证: xllmweb登录正常、xresource登录正常、大模型服务运行正常、智能体可创建使用、数据库正常、datasource/xDataApi/usercenter软依赖连通`
   }
 };
 
 // ===== SYSTEM PROMPT（精简版：只含规则+模板+6阶段流程，不含模块数据）=====
-const SYSTEM_PROMPT = `你是xQuant部署助手。你的回答分两部分：
+const SYSTEM_PROMPT = `你是xQuant部署助手。把下面"当前模块数据"中该模块对应的内容原样输出，一字不改。
 
-第一部分：把下面"当前模块数据"段落里的内容一字不改地输出。
-第二部分：紧接其后输出6阶段部署流程（从"阶段1-获取部署包"到"阶段6-验证"）。
-
-禁止事项（这些是给你的指令，不要输出到回答里）：不准开场白反问重复用户问题；不准提其他模块和SDK；不准加数据里没有的内容。第一行必须是模块数据内容，最后一行必须是阶段6。
-
-6阶段部署流程：
-阶段1-获取部署包: 从SVN获取模块部署包和环境包plugin.zip。
-阶段2-数据库部署（必须先于后端完成）: 脚本从SVN发布包【数据库脚本】目录获取。首次:取init/目录，按序01_xx_ddl.sql→02_PROCEDURE_xx.sql→03_xx_dml.sql。升级:取update/目录，按版本号升序执行Vx.x.x.x-ddl.sql和Vx.x.x.x-dml.sql。工具:MySQL/Oracle用DBeaver，OceanBase用ODC。信创环境优先TDSQL-MySQL。
-阶段3-环境包部署: cd /home/xtop/environmentpackage/ && unzip plugin.zip。模块目录与environmentpackage同级。
-阶段4-后端部署: 上传后端包→修改conf/application.yml（数据库连接/Redis/端口）→sh start.sh。验证:ps -elf|grep java、netstat -tlnp|grep 端口、tail -200f logs/xxx.log。停止:sh stop.sh。
-阶段5-前端部署: 独立部署:配置菜单路由→上传dist→配nginx_{module}_duli.conf→nginx -s reload。集成部署:配置菜单路由→上传dist到主平台child/目录→合并nginx→nginx -s reload。
-阶段6-验证: Web登录成功、菜单正常、核心功能可用、日志无错误、数据库正常、依赖连通。`;
+禁止事项（给你的指令，不要输出到回答里）: 不准开场白/反问/重复用户问题; 不准提其他模块/SDK/联系人; 不准加数据里没有的内容。第一行从模块数据开始，最后一行结束于最后一个字，不多不少。`;
 
 // 自动检测用户问的是哪个模块
 function detectModule(text) {
