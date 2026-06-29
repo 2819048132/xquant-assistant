@@ -103,6 +103,20 @@ body {
 .sidebar-item.active { background: #e8edff; color: var(--accent); font-weight: 500; }
 .sidebar-item .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink:0; opacity:0.4; }
 .sidebar-item.active .dot { opacity:1; }
+.conv-item { position: relative; }
+.conv-item .conv-title { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.conv-item .conv-del {
+  display: none;
+  width: 20px; height: 20px; border-radius: 4px;
+  border: none; background: transparent;
+  font-size: 12px; color: var(--text-muted);
+  cursor: pointer; flex-shrink: 0;
+  align-items: center; justify-content: center;
+}
+.conv-item:hover .conv-del { display: flex; }
+.conv-item .conv-del:hover { background: #fecaca; color: #dc2626; }
+.conv-item .conv-date { font-size: 10px; color: var(--text-muted); margin-top: 1px; white-space:nowrap; }
+.conv-empty { padding: 16px 12px; text-align: center; font-size: 12px; color: var(--text-muted); }
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border);
@@ -516,28 +530,8 @@ body {
     <span>＋</span> 新对话
   </button>
   <nav class="sidebar-nav">
-    <div class="sidebar-section">快捷导航</div>
-    <div class="sidebar-item active" onclick="scrollToWelcome()" id="nav-welcome">
-      <span class="dot"></span> 开始提问
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('xCalendar 前端打不开怎么排查？')">
-      <span class="dot"></span> 日历前端问题
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('xbatch 需要什么硬件配置和特殊包？')">
-      <span class="dot"></span> 离线硬件要求
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序是什么？')">
-      <span class="dot"></span> 智能分析依赖
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('JDBC URL 配置常见错误？')">
-      <span class="dot"></span> 数据库连接错误
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('调度 scheduler 启动报错怎么排查？')">
-      <span class="dot"></span> 调度排查指南
-    </div>
-    <div class="sidebar-item" onclick="quickAsk('xllm 部署有哪些特殊步骤？')">
-      <span class="dot"></span> xllm 部署步骤
-    </div>
+    <div class="sidebar-section">历史对话</div>
+    <div id="convList"></div>
     <div class="sidebar-section">模块列表</div>
     <div class="sidebar-item" onclick="quickAsk('报表 report 怎么部署？')">📊 报表 report</div>
     <div class="sidebar-item" onclick="quickAsk('调度 scheduler 怎么部署？')">⏰ 调度 scheduler</div>
@@ -650,6 +644,8 @@ let API_BASE = localStorage.getItem('xq_api_base') || 'https://open.bigmodel.cn/
 let MODEL = localStorage.getItem('xq_model') || 'glm-4v-flash';
 let WS_ID = localStorage.getItem('xq_ws_id') || '';
 let conversationHistory = [];
+let conversations = [];     // [{id, title, messages, time}]
+let activeConvId = null;
 let isStreaming = false;
 let pendingImages = [];
 
@@ -1108,6 +1104,9 @@ async function sendMessage() {
   if (!text && !hasImages) return;
   if (!API_KEY) { openSettings(); return; }
 
+  // 自动创建对话 ID
+  if (!activeConvId) { activeConvId = genId(); }
+
   let userContent;
   if (hasImages) {
     userContent = pendingImages.map(img => ({type:'image_url',image_url:{url:img.base64}}));
@@ -1125,6 +1124,7 @@ async function sendMessage() {
   addMsg('user', displayText, allImages);
   conversationHistory.push({role:'user', content:userContent});
   saveHistory();
+  renderConvList();
   addTyping();
 
   // Build API messages — sanitize for non-vision models
@@ -1186,6 +1186,7 @@ async function sendMessage() {
     conversationHistory.push({role:'assistant', content:error.message||'网络错误'});
   } finally {
     saveHistory();
+    renderConvList();
     isStreaming = false;
     document.getElementById('sendBtn').disabled = false;
     document.getElementById('userInput').focus();
@@ -1205,54 +1206,193 @@ function handleKey(e) {
 }
 function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,140)+'px'; }
 
-// ===== HISTORY =====
-function saveHistory() {
-  const slim = conversationHistory.map(m => {
-    if (Array.isArray(m.content)) {
-      const texts = m.content.filter(c=>c.type==='text').map(c=>c.text);
-      return {role:m.role, content:texts.join('\n')||'（图片）', hadImages:true};
-    }
-    return {role:m.role, content:m.content};
-  });
-  try { localStorage.setItem('xq_chat_history', JSON.stringify(slim)); } catch(e) {}
+// ===== CONVERSATIONS =====
+function genId() { return 'c'+Date.now()+'_'+Math.random().toString(36).slice(2,7); }
+
+function saveConversations() {
+  try { localStorage.setItem('xq_conversations', JSON.stringify(conversations)); } catch(e) {}
+  try { localStorage.setItem('xq_active_conv', activeConvId || ''); } catch(e) {}
 }
-function loadHistory() {
+function loadConversations() {
   try {
-    const raw = localStorage.getItem('xq_chat_history');
-    if (!raw) return;
-    const history = JSON.parse(raw);
-    history.forEach(m => {
-      if (m.role==='user') addMsg('user', m.content, null);
-      else addMsg('assistant', m.content, null);
+    const raw = localStorage.getItem('xq_conversations');
+    if (raw) conversations = JSON.parse(raw);
+  } catch(e) { conversations = []; }
+  try { activeConvId = localStorage.getItem('xq_active_conv') || null; } catch(e) {}
+}
+
+function saveCurrentConv() {
+  if (!conversationHistory.length) return;
+  // 提取标题（第一条用户消息的前30字）
+  const firstUser = conversationHistory.find(m => m.role==='user');
+  let title = '新对话';
+  if (firstUser) {
+    const txt = typeof firstUser.content==='string' ? firstUser.content : '';
+    title = txt.replace(/[\n\r]/g,' ').slice(0,30) + (txt.length>30?'…':'');
+  }
+  // 获取时间
+  const now = new Date();
+  const time = now.toLocaleDateString('zh-CN',{month:'short',day:'numeric'})+' '
+    + now.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+
+  if (activeConvId) {
+    const idx = conversations.findIndex(c => c.id===activeConvId);
+    const slim = conversationHistory.map(m => {
+      if (Array.isArray(m.content)) {
+        const texts = m.content.filter(c=>c.type==='text').map(c=>c.text);
+        return {role:m.role, content:texts.join('\n')||'（图片）', hadImages:true};
+      }
+      return {role:m.role, content:m.content};
     });
-    conversationHistory = history.map(m=>({role:m.role, content:m.content}));
-  } catch(e) {}
+    if (idx>=0) {
+      conversations[idx].title = title;
+      conversations[idx].messages = slim;
+      conversations[idx].time = time;
+    } else {
+      conversations.unshift({id:activeConvId, title, messages:slim, time});
+    }
+  }
+  saveConversations();
 }
-function clearChat() {
-  if (!confirm('确定清空所有对话记录？')) return;
-  conversationHistory = [];
-  localStorage.removeItem('xq_chat_history');
+
+function switchConv(id) {
+  if (isStreaming) return;
+  saveCurrentConv();
+  const conv = conversations.find(c => c.id===id);
+  if (!conv) return;
+  activeConvId = id;
+  conversationHistory = conv.messages.map(m => ({role:m.role, content:m.content}));
+  saveConversations();
+  // 重绘聊天区
   const inner = document.getElementById('chatInner');
-  inner.innerHTML = `<div class="welcome" id="welcomeMsg">
-    <div class="welcome-icon">📋</div>
-    <h1>xQuant 部署助手</h1>
-    <p>我已读完 13 份部署手册，随时为你解答。支持上传报错截图分析、多轮对话——任何部署问题都可以问。</p>
-    <div class="quick-grid">
-      <div class="quick-card" onclick="quickAsk('日历部署前端打不开怎么排查？')"><span class="qc-icon">📅</span> 日历前端打不开？</div>
-      <div class="quick-card" onclick="quickAsk('xbatch 需要什么硬件配置？')"><span class="qc-icon">📦</span> xbatch 硬件配置？</div>
-      <div class="quick-card" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序？')"><span class="qc-icon">🧠</span> AnalysisAI 依赖关系？</div>
-      <div class="quick-card" onclick="quickAsk('JDBC URL 配置要注意什么？')"><span class="qc-icon">🔌</span> 数据库连接常见坑</div>
-      <div class="quick-card" onclick="quickAsk('调度启动报数据库连接错误怎么排查？')"><span class="qc-icon">⏰</span> 调度启动报错排查</div>
-      <div class="quick-card" onclick="quickAsk('xllm 部署顺序和特殊步骤？')"><span class="qc-icon">🤖</span> xllm 部署步骤</div>
-    </div>
-  </div>`;
-}
-function newChat() { clearChat(); }
-function scrollToWelcome() {
-  document.getElementById('chatArea').scrollTo({top:0,behavior:'smooth'});
+  inner.innerHTML = '';
+  conv.messages.forEach(m => {
+    if (m.role==='user') addMsg('user', m.content, null);
+    else addMsg('assistant', m.content, null);
+  });
+  if (!conv.messages.length) {
+    inner.innerHTML = `<div class="welcome" id="welcomeMsg">
+      <div class="welcome-icon">📋</div>
+      <h1>xQuant 部署助手</h1>
+      <div style="font-size:14px;color:var(--text-secondary);max-width:420px;line-height:1.6;margin-bottom:28px">我已读完 13 份部署手册，随时为你解答。支持上传报错截图分析、多轮对话——任何部署问题都可以问。</div>
+      ` + prepareQuickGrid() + `
+    </div>`;
+  }
+  renderConvList();
+  // Close mobile sidebar
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('show');
 }
+
+function deleteConv(id, e) {
+  e.stopPropagation();
+  if (!confirm('确定删除这个对话？')) return;
+  conversations = conversations.filter(c => c.id!==id);
+  if (activeConvId===id) {
+    activeConvId = conversations.length>0 ? conversations[0].id : null;
+    if (activeConvId) {
+      const conv = conversations[0];
+      conversationHistory = conv.messages.map(m => ({role:m.role, content:m.content}));
+    } else {
+      conversationHistory = [];
+    }
+  }
+  saveConversations();
+  // 重绘界面
+  const inner = document.getElementById('chatInner');
+  inner.innerHTML = '';
+  if (activeConvId && conversationHistory.length) {
+    conversationHistory.forEach(m => {
+      if (m.role==='user') addMsg('user', m.content, null);
+      else addMsg('assistant', m.content, null);
+    });
+  } else {
+    showWelcome();
+  }
+  renderConvList();
+}
+
+function renderConvList() {
+  const el = document.getElementById('convList');
+  if (!el) return;
+  if (!conversations.length) {
+    el.innerHTML = '<div class="conv-empty">暂无历史对话</div>';
+    return;
+  }
+  el.innerHTML = conversations.map(c => {
+    const active = c.id===activeConvId ? ' active' : '';
+    return `<div class="sidebar-item conv-item${active}" onclick="switchConv('${c.id}')">
+      <span class="dot"></span>
+      <div style="flex:1;min-width:0">
+        <div class="conv-title">${escHtml(c.title)}</div>
+        <div class="conv-date">${c.time||''}</div>
+      </div>
+      <button class="conv-del" onclick="deleteConv('${c.id}',event)">✕</button>
+    </div>`;
+  }).join('');
+}
+function escHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function prepareQuickGrid() {
+  return `<div class="quick-grid">
+    <div class="quick-card" onclick="quickAsk('日历部署前端打不开怎么排查？')"><span class="qc-icon">📅</span> 日历前端打不开？</div>
+    <div class="quick-card" onclick="quickAsk('xbatch 需要什么硬件配置？')"><span class="qc-icon">📦</span> xbatch 硬件配置？</div>
+    <div class="quick-card" onclick="quickAsk('AnalysisAI 依赖哪些模块？部署顺序？')"><span class="qc-icon">🧠</span> AnalysisAI 依赖关系？</div>
+    <div class="quick-card" onclick="quickAsk('JDBC URL 配置要注意什么？')"><span class="qc-icon">🔌</span> 数据库连接常见坑</div>
+    <div class="quick-card" onclick="quickAsk('调度启动报数据库连接错误怎么排查？')"><span class="qc-icon">⏰</span> 调度启动报错排查</div>
+    <div class="quick-card" onclick="quickAsk('xllm 部署顺序和特殊步骤？')"><span class="qc-icon">🤖</span> xllm 部署步骤</div>
+  </div>`;
+}
+function showWelcome() {
+  return `<div class="welcome" id="welcomeMsg">
+    <div class="welcome-icon">📋</div>
+    <h1>xQuant 部署助手</h1>
+    <div style="font-size:14px;color:var(--text-secondary);max-width:420px;line-height:1.6;margin-bottom:28px">我已读完 13 份部署手册，随时为你解答。支持上传报错截图分析、多轮对话——任何部署问题都可以问。</div>
+    ` + prepareQuickGrid() + `
+  </div>`;
+}
+
+// ===== HISTORY (legacy compat) =====
+function saveHistory() {
+  saveCurrentConv();
+}
+function loadHistory() {
+  loadConversations();
+  renderConvList();
+  if (activeConvId) {
+    const conv = conversations.find(c => c.id===activeConvId);
+    if (conv) {
+      conversationHistory = conv.messages.map(m => ({role:m.role, content:m.content}));
+      conv.messages.forEach(m => {
+        if (m.role==='user') addMsg('user', m.content, null);
+        else addMsg('assistant', m.content, null);
+      });
+      return;
+    }
+  }
+  // No active conversation, show welcome
+  if (!conversations.length) return;
+  // Load latest conversation
+  const latest = conversations[0];
+  activeConvId = latest.id;
+  conversationHistory = latest.messages.map(m => ({role:m.role, content:m.content}));
+  latest.messages.forEach(m => {
+    if (m.role==='user') addMsg('user', m.content, null);
+    else addMsg('assistant', m.content, null);
+  });
+  renderConvList();
+}
+function clearChat() {
+  if (isStreaming) return;
+  saveCurrentConv();
+  activeConvId = null;
+  conversationHistory = [];
+  saveConversations();
+  const inner = document.getElementById('chatInner');
+  inner.innerHTML = showWelcome();
+  renderConvList();
+}
+function newChat() { clearChat(); }
 
 // Sidebar toggle (mobile)
 function toggleSidebar() {
